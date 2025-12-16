@@ -10,6 +10,22 @@ Simple notekeeping of configurations and tools, mostly related to Linux and Free
 
 This is a project agnostic version of my earlier [JogAmp Scripting Notes](https://jausoft.com/cgit/jogamp/jogamp-scripting.git/).
 
+## Development
+- [C++ Support](dev/cpp/Cpp-Support.md)
+
+## Tools
+- [Python](tools/python.md)
+- [yt-dlp](tools/yt-dlp.md)
+
+## Server Config
+- [Let's Encrypt Free SSL-Key Setup](config/server/05-services/90-letsencrypt.md)
+- [Misc Services](config/server/05-services/02-SERVICES.md)
+- [Apache suexec, fcgid](config/server/80-apache-suexec-fcgid-cgit-etc/0-basic.md)
+
+## Config / Setup
+- [FreeBSD Install w/ Desktop on KVM](config/FreeBSD/FreeBSD-Install_wDesktopOnKVM.md)
+- [X11 HiDPI](config/x11/HiDPI/HiDPI.md)
+
 ## Some Jausoft Projects
 - [jaulib](https://jausoft.com/cgit/jaulib.git/about/)
   - Provides general C++ collections, algorithms and utilities
