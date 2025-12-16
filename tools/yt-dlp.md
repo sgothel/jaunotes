@@ -44,6 +44,7 @@ npm install -g deno
 # ~/node_modules/bin/deno task bundle
 ```
 
+```
 pip install -U yt-dlp-ejs
 ```
 
