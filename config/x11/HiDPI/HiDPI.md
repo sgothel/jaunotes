@@ -19,11 +19,8 @@ See [archlinux](https://wiki.archlinux.org/title/HiDPI#Firefox).
 browser.display.os-zoom-behavior 0
 ```
 
-## xsettingsd (Gnome/GTK/GDK/...)
-- [archlinux](https://wiki.archlinux.org/title/Xsettingsd)
-- [codeberg](https://codeberg.org/derat/xsettingsd)
-
-### Config Files
+## Xresources
+- [archlinux](https://wiki.archlinux.org/title/X_resources)
 
 File ~/.Xresources
 ```
@@ -41,6 +38,25 @@ Xft.hinting: 1
 Xft.antialias: 1
 Xft.rgba: rgb
 ```
+
+### Load/Merge
+```
+# Load
+xrdb ~/.Xresources
+
+# Merge
+xrdb -merge ~/.Xresources
+```
+
+### Test
+```
+xrdb -query
+xrdb -query -all
+```
+
+## xsettingsd (Gnome/GTK/GDK/...)
+- [archlinux](https://wiki.archlinux.org/title/Xsettingsd)
+- [codeberg](https://codeberg.org/derat/xsettingsd)
 
 File ~/.config/xsettingsd/xsettingsd.conf
 ```
