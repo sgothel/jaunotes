@@ -39,6 +39,15 @@ Xft.antialias: 1
 Xft.rgba: rgb
 ```
 
+If you like to support better font rendering for old applications
+like [DDD, this works quite well](https://begriffs.com/posts/2022-07-17-debugging-gdb-ddd.html#utf-8-rendering)
+```
+Ddd*renderTable: rt
+Ddd*rt*fontType: FONT_IS_XFT
+Ddd*rt*fontName: DejaVu Sans Mono
+Ddd*rt*fontSize: 10
+```
+
 ### Load/Merge
 ```
 # Load
@@ -57,6 +66,8 @@ xrdb -query -all
 ## xsettingsd (Gnome/GTK/GDK/...)
 - [archlinux](https://wiki.archlinux.org/title/Xsettingsd)
 - [codeberg](https://codeberg.org/derat/xsettingsd)
+
+`Xft/DPI` is your DPI multiplied by 1024.
 
 File ~/.config/xsettingsd/xsettingsd.conf
 ```
