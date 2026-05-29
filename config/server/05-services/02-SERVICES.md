@@ -299,10 +299,24 @@ systemctl enable spamd.service && systemctl start spamd.service
   /etc/init.d/xinetd restart
   ```
 
-- gitweb
+- gitweb (removed, see cgit below)
   - We use deployed gitweb now, and simply deploy gitweb.conf
     - ln -s /usr/share/gitweb DocumentRoot/git
     - cp srv/scm/gitweb.conf
+
+### cgit
+
+```
+git clone git://jausoft.com/srv/scm/cgit.git
+cd cgit
+git checkout --track -b jau_config origin/jau_config
+git submodule init
+git submodule update
+cp scripts/cgit.conf .
+make
+sudo make install
+sudo chown -R webrunner:webrunner /srv/www/cgit
+```
 
 ## Apache2 / Webservices
 
