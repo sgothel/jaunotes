@@ -21,6 +21,7 @@ This is a project agnostic version of my earlier [JogAmp Scripting Notes](https:
 - [Let's Encrypt Free SSL-Key Setup](config/server/05-services/90-letsencrypt.md)
 - [Misc Services](config/server/05-services/02-SERVICES.md)
 - [Apache suexec, fcgid](config/server/80-apache-suexec-fcgid-cgit-etc/0-basic.md)
+- [Server Connection Limitation and Timeouts](config/server/doc/server-limits_timeouts.md)
 
 ## Config / Setup
 - [FreeBSD Install w/ Desktop on KVM](config/FreeBSD/FreeBSD-Install_wDesktopOnKVM.md)
