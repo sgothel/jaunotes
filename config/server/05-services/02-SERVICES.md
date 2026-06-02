@@ -141,13 +141,13 @@ ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
 #### Folder Permissions
 Using `spamd` of under the `debian-spamd` (Debian 13)
 and ensuring to use a global common home-dir under `debian-spamd` ownership.
-~~~~~
+```
 mkdir /var/log/spamassassin/
 mkdir /var/lib/spamassassin/bayesdb/
 chown -R debian-spamd:debian-spamd /var/lib/spamassassin
 
 drwxr-xr-x  8 debian-spamd debian-spamd /var/lib/spamassassin/
-~~~~
+```
 
 #### Procmail
 
