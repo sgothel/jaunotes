@@ -72,8 +72,9 @@ Recurring default magic timeouts are
   - Maximum IDLE time between send/read chunks to/from the client to complete a request
   - Prevents against `slow attack`
 
-- `MinTransferRate` 240 Bps
+- `MinTransferRate` 500 Bps
   - Minimum transfer rate to client using total time and transfered bytes.
+  - Note: GSM 2G -- 9.6Kbps or ~1200 Bps maximum
   - Prevents against `slow attack`
 
 - `PingPeriodMax` 18s
