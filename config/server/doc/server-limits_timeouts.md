@@ -60,7 +60,7 @@ Recurring default magic timeouts are
   - 100 to 1000 maximum requests for each connection
 
 ### Custom Application
-- `DefaultTimeout` 64s
+- `DefaultTimeout` 60s
   - Maximum duration to complete a http client request
   - Maximum socket poll duration (internal poll-timeout, not leading to disconnection)
 
@@ -68,7 +68,7 @@ Recurring default magic timeouts are
   - Maximum socket inactivity (usually a http StreamSocket) between client activity (I/O data)
   - Prevents against `slow attack`
 
-- `MinTransferRate` 500 Bps
+- `MinTransferRate` 240 Bps
   - Minimum transfer rate to client using total time and transfered bytes.
   - Prevents against `slow attack`
 
