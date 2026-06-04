@@ -68,6 +68,10 @@ Recurring default magic timeouts are
   - Maximum socket inactivity (usually a http StreamSocket) between client activity (I/O data)
   - Prevents against `slow attack`
 
+- `ClientIOIdleTimeout` 20s
+  - Maximum IDLE time between send/read chunks to/from the client to complete a request
+  - Prevents against `slow attack`
+
 - `MinTransferRate` 240 Bps
   - Minimum transfer rate to client using total time and transfered bytes.
   - Prevents against `slow attack`
