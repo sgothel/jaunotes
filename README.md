@@ -26,6 +26,7 @@ This is a project agnostic version of my earlier [JogAmp Scripting Notes](https:
 ## Config / Setup
 - [FreeBSD Install w/ Desktop on KVM](config/FreeBSD/FreeBSD-Install_wDesktopOnKVM.md)
 - [X11 HiDPI](config/x11/HiDPI/HiDPI.md)
+- [Linux: Boot UEFI Dual or Single](config/misc/linux-boot-uefi_dual-or-single.md)
 
 ## Some Jausoft Projects
 - [jaulib](https://jausoft.com/cgit/jaulib.git/about/)
