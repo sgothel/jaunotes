@@ -5,6 +5,10 @@
 
 ## Disk Partitioning
 
+We assume we have disks using a physical 4096 bytes block
+and they may expose a simulated 512 bytes block,
+which we ignore.
+
 ### Partition Dual BIOS + UEFI Bootable Disk
 - EF02 Bios-Boot (Grub core)
 - EF00 EFI System
@@ -12,6 +16,7 @@
 
 ```
 sgdisk --zap-all \
+  --set-alignment=4096 --align-end \
   --new 1::+1M   --typecode=1:EF02 \
   --new 2::+700M --typecode=2:EF00 \
   --new 3::0     --typecode=3:BF01 \
@@ -24,6 +29,7 @@ sgdisk --zap-all \
 
 ```
 sgdisk --zap-all \
+  --set-alignment=4096 --align-end \
   --new 1::+700M --typecode=1:EF00 \
   --new 2::0     --typecode=2:BF01 \
   /dev/disk/by-id/DISK
