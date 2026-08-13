@@ -12,26 +12,30 @@ which we ignore.
 ### Partition Dual BIOS + UEFI Bootable Disk
 - EF02 Bios-Boot (Grub core)
 - EF00 EFI System
+- 8200 Linux Swap
 - BF01 ZFS Root
 
 ```
 sgdisk --zap-all \
   --set-alignment=4096 --align-end \
-  --new 1::+1M   --typecode=1:EF02 \
-  --new 2::+700M --typecode=2:EF00 \
-  --new 3::0     --typecode=3:BF01 \
+  --new 1::+1MiB   --typecode=1:EF02 \
+  --new 2::+700MiB --typecode=2:EF00 \
+  --new 3::+64GiB  --typecode=3:8200 \
+  --new 4::0       --typecode=4:BF01 \
   /dev/disk/by-id/DISK
 ```
 
 ### Partition Single UEFI Bootable Disk
 - EF00 EFI System
+- 8200 Linux Swap
 - BF01 ZFS Root
 
 ```
 sgdisk --zap-all \
   --set-alignment=4096 --align-end \
-  --new 1::+700M --typecode=1:EF00 \
-  --new 2::0     --typecode=2:BF01 \
+  --new 1::+700MiB --typecode=1:EF00 \
+  --new 2::+64GiB  --typecode=2:8200 \
+  --new 3::0       --typecode=3:BF01 \
   /dev/disk/by-id/DISK
 ```
 
