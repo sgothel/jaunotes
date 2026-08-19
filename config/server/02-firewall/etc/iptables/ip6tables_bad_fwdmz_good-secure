@@ -28,9 +28,10 @@ elif [ "$action" = "restart" ] ; then
 
 elif [ "$action" = "stop" ] ; then
 
-        echo "IPTABLES rules down" 
+        echo "IPTABLES rules down"
 
         $IPTABLES -F acl_external_input
+        $IPTABLES -F acl_syn_flood
         $IPTABLES -F acl_srv_connect
         $IPTABLES -F acl_srv_web
         $IPTABLES -F acl_srv_shared
@@ -40,6 +41,7 @@ elif [ "$action" = "stop" ] ; then
         $IPTABLES -F FORWARD
 
         $IPTABLES -X acl_external_input
+        $IPTABLES -X acl_syn_flood
         $IPTABLES -X acl_srv_connect
         $IPTABLES -X acl_srv_web
         $IPTABLES -X acl_srv_shared
@@ -51,18 +53,19 @@ elif [ "$action" = "stop" ] ; then
 
 elif [ "$action" = "start" ] ; then
 
-        echo "IPTABLES rules up" 
+        echo "IPTABLES rules up"
 
-        # Anti-spoofing 
+        # Anti-spoofing
         #
-        # Since we don't have any asymmetric routing, 
-        # we can simply turn on anti-spoofing for all interfaces. 
+        # Since we don't have any asymmetric routing,
+        # we can simply turn on anti-spoofing for all interfaces.
         #
         #for f in /proc/sys/net/ipv4/conf/*ppp*/rp_filter; do echo 1 > $f; done
 
         $IPTABLES -P INPUT   DROP
 
         $IPTABLES -N acl_external_input
+        $IPTABLES -N acl_syn_flood
         $IPTABLES -N acl_srv_connect
         $IPTABLES -N acl_srv_web
         $IPTABLES -N acl_srv_shared
@@ -75,11 +78,11 @@ elif [ "$action" = "start" ] ; then
 
         # INPUT -> user chains
         #
-        # Unfortunately, we only know (in the FORWARD chain) the outgoing interface. 
-        # Thus, to figure out what interface the packet came in on, 
-        # we use the source address (the anti-spoofing prevents address faking). 
+        # Unfortunately, we only know (in the FORWARD chain) the outgoing interface.
+        # Thus, to figure out what interface the packet came in on,
+        # we use the source address (the anti-spoofing prevents address faking).
         #
-        # Note that we log anything which doesn't match any of these (obviously, this should never happen). 
+        # Note that we log anything which doesn't match any of these (obviously, this should never happen).
         #
 
         #
@@ -137,6 +140,20 @@ elif [ "$action" = "start" ] ; then
         # acl_extern_
         #
 
+        # Monitor
+        # iptables -L acl_external_input -n -v | grep -E "ctstate|#conn|ssh|http|icmp"
+        # iptables -L acl_syn_flood -n -v
+        #
+        # echo -n "ns 443         " ; netstat -tuna | grep :443 | wc -l
+        # echo -n "ss established " ; ss -tan state established | wc -l
+        # echo -n "ns syn         " ; netstat -tuna | grep SYN | wc -l
+        # echo -n "ss syn-recv    " ; ss -tan state syn-recv | wc -l
+        #
+        # cat /proc/net/ipt_hashlimit/ssh-limit
+        # cat /proc/net/ipt_hashlimit/http-limit
+        # cat /proc/net/ipt_hashlimit/https-limit
+        #
+        # ICMP
         #
         # Allow fragments (second etc. parts of a huge packet ..)
         # Allow icmpv6 notification: 3/4 destination-unreachable/fragmentation-needed
@@ -144,7 +161,7 @@ elif [ "$action" = "start" ] ; then
         # ATTENTION .. can be anything (ICMP), but the very 1st will be filtered ok !
         #
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type echo-request -m limit --limit 5/s  -j ACCEPT
-        $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type echo-reply                  -j ACCEPT
+        $IPTABLES  -A acl_external_input   -p icmpv6                            -m limit --limit 10/s -j ACCEPT
 
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type destination-unreachable     -j ACCEPT
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type packet-too-big              -j ACCEPT
@@ -154,7 +171,50 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type neighbour-advertisement     -j ACCEPT
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type router-solicitation         -j ACCEPT
         $IPTABLES  -A acl_external_input   -p icmpv6 --icmpv6-type router-advertisement        -j ACCEPT
+        $IPTABLES  -A acl_external_input   -p icmpv6                                           -j DROP
 
+        # Limit SYN packets to an average of 50 per second, with a burst of 100
+        $IPTABLES -A acl_external_input    -p tcp --syn                    -j acl_syn_flood
+        $IPTABLES -A acl_syn_flood -m limit --limit 50/s --limit-burst 100 -j RETURN
+        $IPTABLES -A acl_syn_flood                                         -j DROP
+
+        # Per-IP rate limiting for new SSH connections
+        $IPTABLES -A acl_external_input -p tcp --dport 22 \
+                   -m conntrack --ctstate NEW \
+                   -m hashlimit \
+                   --hashlimit-name ssh-limit --hashlimit-mode srcip \
+                   --hashlimit-above 6/min --hashlimit-burst 5 \
+                   --hashlimit-htable-expire 60000 \
+                   -j DROP
+
+        # Rate limit new HTTP connections per IP to an average of 100/120 per minute
+        $IPTABLES -A acl_external_input -p tcp --dport 80 \
+                  -m conntrack --ctstate NEW \
+                  -m hashlimit \
+                  --hashlimit-name http-limit --hashlimit-mode srcip \
+                  --hashlimit-above 100/min --hashlimit-burst 5 \
+                  --hashlimit-htable-expire 60000 \
+                  -j DROP
+
+        $IPTABLES -A acl_external_input -p tcp --dport 443 \
+                  -m conntrack --ctstate NEW \
+                  -m hashlimit \
+                  --hashlimit-name https-limit --hashlimit-mode srcip \
+                  --hashlimit-above 120/min --hashlimit-burst 5 \
+                  --hashlimit-htable-expire 60000 \
+                  -j DROP
+
+        # Allow max 10 concurrent connections to SSH per source IP
+        $IPTABLES -A acl_external_input -p tcp --syn --dport 22 \
+                  -m connlimit --connlimit-above 10 -j REJECT
+
+        # Limit concurrent HTTP connections per IP to 10/20
+        $IPTABLES -A acl_external_input -p tcp --syn --dport 80 \
+                  -m connlimit --connlimit-above 10 -j REJECT
+        $IPTABLES -A acl_external_input -p tcp --syn --dport 443 \
+                  -m connlimit --connlimit-above 20 -j REJECT
+
+        # Protocol rules
         $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_connect     # includes: allow to answer ..
         $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_login_sec
         $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_web
@@ -172,7 +232,7 @@ elif [ "$action" = "start" ] ; then
         #########################################################################################################################
         #########################################################################################################################
         #
-        # INPUT Allow acl_srv_shared 
+        # INPUT Allow acl_srv_shared
         #
         # FTP, SAMBA, GNUnet clients
         #
@@ -189,7 +249,7 @@ elif [ "$action" = "start" ] ; then
         #
         #########################################################################################################################
         #
-        # INPUT Allow acl_srv_login_sec 
+        # INPUT Allow acl_srv_login_sec
         #
         # SSH
         #
@@ -204,7 +264,7 @@ elif [ "$action" = "start" ] ; then
         #
         #########################################################################################################################
         #
-        # INPUT Allow acl_srv_email 
+        # INPUT Allow acl_srv_email
         #
         # POP3s, SMTP
         #
@@ -230,7 +290,7 @@ elif [ "$action" = "start" ] ; then
         #
         #########################################################################################################################
         #
-        # INPUT Allow acl_srv_web 
+        # INPUT Allow acl_srv_web
         #
         # HTTP, NTP
         #
@@ -247,7 +307,7 @@ elif [ "$action" = "start" ] ; then
         #
         #########################################################################################################################
         #
-        # INPUT Allow acl_srv_connect 
+        # INPUT Allow acl_srv_connect
         #
         # ICMP, NTP, DHCP, DNS, ANSWER
         #
@@ -259,7 +319,7 @@ elif [ "$action" = "start" ] ; then
 
         # DHCP .. TFTP
         #
-        $IPTABLES -p udp -A acl_srv_connect -i $ETH_EXTERN --dport mdns        -s $IP_EXTERN_SELF  -j ACCEPT # 
+        $IPTABLES -p udp -A acl_srv_connect -i $ETH_EXTERN --dport mdns        -s $IP_EXTERN_SELF  -j ACCEPT #
         $IPTABLES -p udp -A acl_srv_connect -i $ETH_EXTERN --dport bootps:tftp -s $IP_EXTERN_GW    -j ACCEPT #
         $IPTABLES -p tcp -A acl_srv_connect -i $ETH_EXTERN --dport bootps:69   -s $IP_EXTERN_GW    -j ACCEPT #
 
@@ -271,6 +331,11 @@ elif [ "$action" = "start" ] ; then
         # $IPTABLES -p udp -A acl_srv_connect        --dport domain                            -j ACCEPT
         # $IPTABLES -p tcp -A acl_srv_connect        --dport netbios-ns:netbios-ssn            -j ACCEPT
         # $IPTABLES -p udp -A acl_srv_connect        --dport netbios-ns:netbios-ssn            -j ACCEPT
+
+        # iperf
+        #
+        #$IPTABLES -p tcp  -A acl_srv_connect         --dport 5001                              -j ACCEPT
+        #$IPTABLES -p udp  -A acl_srv_connect         --dport 5001                              -j ACCEPT
 
         #
         # acl_srv_connect Allow * to answer,
