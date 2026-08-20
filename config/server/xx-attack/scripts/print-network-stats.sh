@@ -28,12 +28,9 @@ echo -n "http  ipv4 " ; cat /proc/net/ipt_hashlimit/http-limit  | wc -l | tr -d 
 echo -n "https ipv4 " ; cat /proc/net/ipt_hashlimit/https-limit | wc -l | tr -d '\n\r' ; printf "\t ipv6 " ; cat /proc/net/ip6t_hashlimit/https-limit | wc -l
 echo
 
-echo "ipv4  acl_dos_limiter"
-echo " pkts bytes target     prot opt in     out     source               destination"
 iptables -L acl_dos_limiter -n -v | grep -v -E "icmptype (0$|3$|3 code 4$|11$|12$|13$)|acl_syn_flood"
 echo
-echo "ipv6  acl_dos_limiter"
-ip6tables -L acl_dos_limiter -n -v | grep -v -E "ipv6-icmptype (1$|2$|3$|4$|129$|133$|134$|135$|136$|)|acl_syn_flood"
+ip6tables -L acl_dos_limiter -n -v | grep -v -E "ipv6-icmptype (1$|2$|3$|4$|129$|130.*$|131.*$|132.*$|133.*$|134.*$|135.*$|136.*$|143.*$|148.*$|149.*$|153.*$)|acl_syn_flood"
 echo
 
 echo "ipv4  syn-flood"
