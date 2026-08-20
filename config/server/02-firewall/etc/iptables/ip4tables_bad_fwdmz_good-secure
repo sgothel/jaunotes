@@ -262,12 +262,12 @@ elif [ "$action" = "start" ] ; then
                    --hashlimit-htable-expire 60000 \
                    -j DROP
 
-        # Rate limit new HTTP connections per IP to an average of 100/120 per minute
+        # Rate limit new HTTP connections per IP
         $IPTABLES -A acl_dos_limiter -p tcp --dport 80 \
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name http-limit --hashlimit-mode srcip \
-                  --hashlimit-above 100/min --hashlimit-burst 5 \
+                  --hashlimit-above 10/s --hashlimit-burst 20 \
                   --hashlimit-htable-expire 60000 \
                   -j DROP
 
@@ -275,19 +275,19 @@ elif [ "$action" = "start" ] ; then
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name https-limit --hashlimit-mode srcip \
-                  --hashlimit-above 120/min --hashlimit-burst 5 \
+                  --hashlimit-above 15/s --hashlimit-burst 30 \
                   --hashlimit-htable-expire 60000 \
                   -j DROP
 
-        # Allow max 30 concurrent connections to SSH per source IP
+        # Limit concurrent SSH connections per IP
         $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 22 \
                   -m connlimit --connlimit-above 30 -j REJECT
 
-        # Limit concurrent HTTP connections per IP to 10/20
+        # Limit concurrent HTTP connections per IP
         $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 80 \
                   -m connlimit --connlimit-above 10 -j REJECT
         $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 443 \
-                  -m connlimit --connlimit-above 20 -j REJECT
+                  -m connlimit --connlimit-above 30 -j REJECT
 
         $IPTABLES -A acl_dos_limiter                -j RETURN
 
