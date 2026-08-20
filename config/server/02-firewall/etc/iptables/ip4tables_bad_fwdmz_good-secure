@@ -31,6 +31,7 @@ elif [ "$action" = "stop" ] ; then
         echo "IPTABLES rules down"
 
         $IPTABLES -F acl_external_input
+        $IPTABLES -F acl_dos_limiter
         $IPTABLES -F acl_syn_flood
         $IPTABLES -F acl_srv_connect
         $IPTABLES -F acl_srv_web
@@ -42,6 +43,7 @@ elif [ "$action" = "stop" ] ; then
         $IPTABLES -F FORWARD
 
         $IPTABLES -X acl_external_input
+        $IPTABLES -X acl_dos_limiter
         $IPTABLES -X acl_syn_flood
         $IPTABLES -X acl_srv_connect
         $IPTABLES -X acl_srv_web
@@ -114,6 +116,7 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -P OUTPUT  ACCEPT
 
         $IPTABLES -N acl_external_input
+        $IPTABLES -N acl_dos_limiter
         $IPTABLES -N acl_syn_flood
         $IPTABLES -N acl_srv_connect
         $IPTABLES -N acl_srv_web
@@ -193,8 +196,30 @@ elif [ "$action" = "start" ] ; then
             $IPTABLES -p all -A acl_external_input -s $ipaddr -j log_and_drop
         done
 
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_dos_limiter
+
+        # Protocol rules
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_connect     # includes: allow to answer ..
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_login_sec
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_web
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_shared
+        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_email
+
+        # --syn == "--tcp-flags SYN,RST,ACK SYN"
+        #$IPTABLES -p tcp -A acl_external_input        ! --syn -j LOG --log-level debug --log-prefix "FW4-Ext: rej INET !syn "
+        #$IPTABLES -p tcp -A acl_external_input        ! --syn                                 -j REJECT
+        #$IPTABLES -p all -A acl_external_input -m state ! --state ESTABLISHED,RELATED   -j LOG --log-level debug --log-prefix "FW4-Ext: rej INET !resp "
+        #$IPTABLES -p all -A acl_external_input -m state ! --state ESTABLISHED,RELATED         -j REJECT
+
+        #########################################################################################################################
+        #########################################################################################################################
+        #########################################################################################################################
+        #
+        # acl_dos_limiter, acl_syn_flood
+        #
+
         # Monitor
-        # iptables -L acl_external_input -n -v | grep -E "ctstate|#conn|ssh|http|icmp"
+        # iptables -L acl_dos_limiter -n -v
         # iptables -L acl_syn_flood -n -v
         #
         # echo -n "ns 443         " ; netstat -tuna | grep :443 | wc -l
@@ -213,32 +238,32 @@ elif [ "$action" = "start" ] ; then
         #
         # ATTENTION .. can be anything (ICMP), but the very 1st will be filtered ok !
         #
-        $IPTABLES  -A acl_external_input   -p icmp --icmp-type echo-request -m limit --limit 5/s  -j ACCEPT
-        $IPTABLES  -A acl_external_input   -p icmp                          -m limit --limit 10/s -j ACCEPT
-
-        $IPTABLES  -A acl_external_input   -p icmp --icmp-type destination-unreachable         -j ACCEPT
-        $IPTABLES  -A acl_external_input   -p icmp --icmp-type time-exceeded                   -j ACCEPT
-        $IPTABLES  -A acl_external_input   -p icmp --icmp-type parameter-problem               -j ACCEPT
-	    $IPTABLES  -A acl_external_input   -p icmp --icmp-type timestamp-request               -j ACCEPT
-
-        $IPTABLES  -A acl_external_input   -p icmp                                             -j DROP
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type echo-request -m limit --limit 5/s --limit-burst 10 -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type echo-reply                                         -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type fragmentation-needed                               -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type time-exceeded                                      -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type destination-unreachable                            -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type parameter-problem                                  -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type timestamp-request                                  -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp                          -m limit --limit 5/s --limit-burst 10 -j ACCEPT
+        $IPTABLES  -A acl_dos_limiter   -p icmp                                                                -j DROP
 
         # Limit SYN packets to an average of 50 per second, with a burst of 100
-        $IPTABLES -A acl_external_input    -p tcp --syn                    -j acl_syn_flood
+        $IPTABLES -A acl_dos_limiter    -p tcp --syn                       -j acl_syn_flood
         $IPTABLES -A acl_syn_flood -m limit --limit 50/s --limit-burst 100 -j RETURN
         $IPTABLES -A acl_syn_flood                                         -j DROP
 
         # Per-IP rate limiting for new SSH connections
-        $IPTABLES -A acl_external_input -p tcp --dport 22 \
+        $IPTABLES -A acl_dos_limiter -p tcp --dport 22 \
                    -m conntrack --ctstate NEW \
                    -m hashlimit \
                    --hashlimit-name ssh-limit --hashlimit-mode srcip \
-                   --hashlimit-above 6/min --hashlimit-burst 5 \
+                   --hashlimit-above 30/min --hashlimit-burst 50 \
                    --hashlimit-htable-expire 60000 \
                    -j DROP
 
         # Rate limit new HTTP connections per IP to an average of 100/120 per minute
-        $IPTABLES -A acl_external_input -p tcp --dport 80 \
+        $IPTABLES -A acl_dos_limiter -p tcp --dport 80 \
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name http-limit --hashlimit-mode srcip \
@@ -246,7 +271,7 @@ elif [ "$action" = "start" ] ; then
                   --hashlimit-htable-expire 60000 \
                   -j DROP
 
-        $IPTABLES -A acl_external_input -p tcp --dport 443 \
+        $IPTABLES -A acl_dos_limiter -p tcp --dport 443 \
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name https-limit --hashlimit-mode srcip \
@@ -254,28 +279,17 @@ elif [ "$action" = "start" ] ; then
                   --hashlimit-htable-expire 60000 \
                   -j DROP
 
-        # Allow max 10 concurrent connections to SSH per source IP
-        $IPTABLES -A acl_external_input -p tcp --syn --dport 22 \
-                  -m connlimit --connlimit-above 10 -j REJECT
+        # Allow max 30 concurrent connections to SSH per source IP
+        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 22 \
+                  -m connlimit --connlimit-above 30 -j REJECT
 
         # Limit concurrent HTTP connections per IP to 10/20
-        $IPTABLES -A acl_external_input -p tcp --syn --dport 80 \
+        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 80 \
                   -m connlimit --connlimit-above 10 -j REJECT
-        $IPTABLES -A acl_external_input -p tcp --syn --dport 443 \
+        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 443 \
                   -m connlimit --connlimit-above 20 -j REJECT
 
-        # Protocol rules
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_connect     # includes: allow to answer ..
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_login_sec
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_web
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_shared
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_email
-
-        # --syn == "--tcp-flags SYN,RST,ACK SYN"
-        #$IPTABLES -p tcp -A acl_external_input        ! --syn -j LOG --log-level debug --log-prefix "FW4-Ext: rej INET !syn "
-        #$IPTABLES -p tcp -A acl_external_input        ! --syn                                 -j REJECT
-        #$IPTABLES -p all -A acl_external_input -m state ! --state ESTABLISHED,RELATED   -j LOG --log-level debug --log-prefix "FW4-Ext: rej INET !resp "
-        #$IPTABLES -p all -A acl_external_input -m state ! --state ESTABLISHED,RELATED         -j REJECT
+        $IPTABLES -A acl_dos_limiter                -j RETURN
 
         #
         #########################################################################################################################
