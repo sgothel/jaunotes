@@ -285,15 +285,15 @@ elif [ "$action" = "start" ] ; then
 
         #
         # Per-IP rate stats new connections (SYN)
-        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood2 --hashlimit-mode srcip \
-                  --hashlimit-upto   2/sec --hashlimit-burst  4 --hashlimit-htable-expire 60000 -j RETURN
+        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood1 --hashlimit-mode srcip \
+                  --hashlimit-upto   1/sec --hashlimit-burst  3 --hashlimit-htable-expire 60000 -j RETURN
 
-        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood6 --hashlimit-mode srcip \
-                  --hashlimit-upto   6/sec --hashlimit-burst 12 --hashlimit-htable-expire 60000 -j RETURN
+        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood3 --hashlimit-mode srcip \
+                  --hashlimit-upto   3/sec --hashlimit-burst  6 --hashlimit-htable-expire 60000 -j RETURN
 
         # Per-IP rate limiting new connections (SYN)
         $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood --hashlimit-mode srcip \
-                  --hashlimit-above 10/sec --hashlimit-burst 20 --hashlimit-htable-expire 60000 -j drop_syn_ip
+                  --hashlimit-above  6/sec --hashlimit-burst 12 --hashlimit-htable-expire 60000 -j drop_syn_ip
         #
         # Global SYN rate limit (last resort)
         # $IPTABLES -A syn_flood  -m limit --limit 1200/s --limit-burst 2000 -j RETURN
@@ -322,7 +322,7 @@ elif [ "$action" = "start" ] ; then
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name https-limit --hashlimit-mode srcip \
-                  --hashlimit-above 8/s --hashlimit-burst 16 \
+                  --hashlimit-above 5/s --hashlimit-burst 10 \
                   --hashlimit-htable-expire 60000 \
                   -j drop_dos
 
@@ -334,7 +334,7 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -A dos_limiter -p tcp --syn --dport 80 \
                   -m connlimit --connlimit-above 5 -j rejc_dos
         $IPTABLES -A dos_limiter -p tcp --syn --dport 443 \
-                  -m connlimit --connlimit-above 10 -j rejc_dos
+                  -m connlimit --connlimit-above 5 -j rejc_dos
 
         $IPTABLES -A dos_limiter                -j RETURN
 
