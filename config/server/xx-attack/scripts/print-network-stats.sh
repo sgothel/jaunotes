@@ -1,15 +1,17 @@
 #!/bin/sh
 
+# install: ss, top, ..
+
+top -bn1 | head | grep Cpu | awk ' { printf "CPU %3d%, ", 100-$8 }' ; uptime | sed 's/^.*load average: /load average: /g'
 free -h
 echo
 
-echo "Stats"
-printf "total conn %6d, syn  %6d \t\tlisten-drops %6d\n" \
+printf "total conn %6d, syn  %6d \t\tlisten-drops %6d\t\t\t\t(Netstat)\n" \
     $(ss -tan state established | wc -l) \
     $(ss -tan state syn-recv | wc -l) \
     $(netstat -s | grep "SYNs" | awk '{ print $1 }')
 
-printf "https conn %6d, syn  %6d \t\tsyn-flood  %6d 2/s, %d 6/s, %d above (IPs)\n" \
+printf "https conn %6d, syn  %6d \t\tsyn-flood  %6d 2/s, %d 6/s, %d above\t\t(syn-flood IPs)\n" \
     $(ss -tan state established | grep :443 | wc -l) \
     $(ss -tan state syn-recv | grep :443 | wc -l) \
     $(cat /proc/net/ipt_hashlimit/synflood2 | wc -l) \
@@ -32,8 +34,7 @@ printf "cgit #     %6d \t\t\thttpd #    %6d\n" \
 
 echo
 
-echo "Tracking Limited IPs"
-printf "https ipv4 %6d, ipv6 %6d \t\thttp ipv4  %6d, ipv6 %6d\n" \
+printf "https ipv4 %6d, ipv6 %6d \t\thttp ipv4  %6d, ipv6 %6d\t\t\t(IPs)\n" \
     $(cat /proc/net/ipt_hashlimit/https-limit | wc -l) \
     $(cat /proc/net/ip6t_hashlimit/https-limit | wc -l) \
     $(cat /proc/net/ipt_hashlimit/http-limit | wc -l) \
