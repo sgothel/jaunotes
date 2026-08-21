@@ -31,26 +31,38 @@ elif [ "$action" = "stop" ] ; then
         echo "IPTABLES rules down"
 
         $IPTABLES -F acl_external_input
-        $IPTABLES -F acl_dos_limiter
-        $IPTABLES -F acl_syn_flood
+        $IPTABLES -F dos_limiter
+        $IPTABLES -F syn_flood
         $IPTABLES -F acl_srv_connect
         $IPTABLES -F acl_srv_web
         $IPTABLES -F acl_srv_shared
         $IPTABLES -F acl_srv_email
         $IPTABLES -F acl_srv_login_sec
-        $IPTABLES -F log_and_drop
+        $IPTABLES -F drop_ext
+        $IPTABLES -F drop_icmp
+        $IPTABLES -F drop_syn_ip
+        $IPTABLES -F drop_syn_gl
+        $IPTABLES -F drop_dos
+        $IPTABLES -F rejc_dos
         $IPTABLES -F INPUT
         $IPTABLES -F FORWARD
+        $IPTABLES -F
 
         $IPTABLES -X acl_external_input
-        $IPTABLES -X acl_dos_limiter
-        $IPTABLES -X acl_syn_flood
+        $IPTABLES -X dos_limiter
+        $IPTABLES -X syn_flood
         $IPTABLES -X acl_srv_connect
         $IPTABLES -X acl_srv_web
         $IPTABLES -X acl_srv_shared
         $IPTABLES -X acl_srv_email
         $IPTABLES -X acl_srv_login_sec
-        $IPTABLES -X log_and_drop
+        $IPTABLES -X drop_ext
+        $IPTABLES -X drop_icmp
+        $IPTABLES -X drop_syn_ip
+        $IPTABLES -X drop_syn_gl
+        $IPTABLES -X drop_dos
+        $IPTABLES -X rejc_dos
+        $IPTABLES -X
 
         $IPTABLES -P INPUT   ACCEPT
         $IPTABLES -P FORWARD ACCEPT
@@ -116,14 +128,19 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -P OUTPUT  ACCEPT
 
         $IPTABLES -N acl_external_input
-        $IPTABLES -N acl_dos_limiter
-        $IPTABLES -N acl_syn_flood
+        $IPTABLES -N dos_limiter
+        $IPTABLES -N syn_flood
         $IPTABLES -N acl_srv_connect
         $IPTABLES -N acl_srv_web
         $IPTABLES -N acl_srv_shared
         $IPTABLES -N acl_srv_email
         $IPTABLES -N acl_srv_login_sec
-        $IPTABLES -N log_and_drop
+        $IPTABLES -N drop_ext
+        $IPTABLES -N drop_icmp
+        $IPTABLES -N drop_syn_ip
+        $IPTABLES -N drop_syn_gl
+        $IPTABLES -N drop_dos
+        $IPTABLES -N rejc_dos
 
         ###################################################################
         ###################################################################
@@ -188,15 +205,15 @@ elif [ "$action" = "start" ] ; then
         # acl_extern_
         #
 
-        $IPTABLES -p all -A log_and_drop -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-FWD: drop acl_ext input "
-        $IPTABLES -p all -A log_and_drop -j DROP
+        $IPTABLES -p all -A drop_ext -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-EXT: drop ext-input "
+        $IPTABLES -p all -A drop_ext -j DROP
 
         ipaddr_file=$(dirname $0)/badbots_ipaddr.txt
         for ipaddr in `awk -e ' { i=index($1,"#"); if ( 0 == i ) { print $1; } } ' $ipaddr_file` ; do
-            $IPTABLES -p all -A acl_external_input -s $ipaddr -j log_and_drop
+            $IPTABLES -p all -A acl_external_input -s $ipaddr -j drop_ext
         done
 
-        $IPTABLES -p all -A acl_external_input                                                 -j acl_dos_limiter
+        $IPTABLES -p all -A acl_external_input                                                 -j dos_limiter
 
         # Protocol rules
         $IPTABLES -p all -A acl_external_input                                                 -j acl_srv_connect     # includes: allow to answer ..
@@ -215,12 +232,12 @@ elif [ "$action" = "start" ] ; then
         #########################################################################################################################
         #########################################################################################################################
         #
-        # acl_dos_limiter, acl_syn_flood
+        # dos_limiter, syn_flood
         #
 
         # Monitor
-        # iptables -L acl_dos_limiter -n -v
-        # iptables -L acl_syn_flood -n -v
+        # iptables -L dos_limiter -n -v
+        # iptables -L syn_flood -n -v
         #
         # echo -n "ns 443         " ; netstat -tuna | grep :443 | wc -l
         # echo -n "ss established " ; ss -tan state established | wc -l
@@ -231,6 +248,21 @@ elif [ "$action" = "start" ] ; then
         # cat /proc/net/ipt_hashlimit/http-limit
         # cat /proc/net/ipt_hashlimit/https-limit
         #
+
+        $IPTABLES -p all -A drop_icmp -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-ICMP: drop "
+        $IPTABLES -p all -A drop_icmp -j DROP
+
+        $IPTABLES -p all -A drop_syn_ip -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-SYN-IP: drop "
+        $IPTABLES -p all -A drop_syn_ip -j DROP
+        $IPTABLES -p all -A drop_syn_gl -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-SYN-GL: drop "
+        $IPTABLES -p all -A drop_syn_gl -j DROP
+
+        $IPTABLES -p all -A drop_dos -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-DOS: drop "
+        $IPTABLES -p all -A drop_dos -j DROP
+
+        $IPTABLES -p all -A rejc_dos -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-DOS: reject "
+        $IPTABLES -p all -A rejc_dos -j REJECT
+
         # ICMP
         #
         # Allow fragments (second etc. parts of a huge packet ..)
@@ -238,58 +270,73 @@ elif [ "$action" = "start" ] ; then
         #
         # ATTENTION .. can be anything (ICMP), but the very 1st will be filtered ok !
         #
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type echo-request -m limit --limit 5/s --limit-burst 10 -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type echo-reply                                         -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type fragmentation-needed                               -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type time-exceeded                                      -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type destination-unreachable                            -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type parameter-problem                                  -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp --icmp-type timestamp-request                                  -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp                          -m limit --limit 5/s --limit-burst 10 -j ACCEPT
-        $IPTABLES  -A acl_dos_limiter   -p icmp                                                                -j DROP
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type echo-request -m limit --limit 5/s --limit-burst 10 -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type echo-reply                                         -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type fragmentation-needed                               -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type time-exceeded                                      -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type destination-unreachable                            -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type parameter-problem                                  -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp --icmp-type timestamp-request                                  -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp                          -m limit --limit 5/s --limit-burst 10 -j ACCEPT
+        $IPTABLES  -A dos_limiter   -p icmp                                                                -j drop_icmp
 
         # Limit SYN packets to an average of 50 per second, with a burst of 100
-        $IPTABLES -A acl_dos_limiter    -p tcp --syn                       -j acl_syn_flood
-        $IPTABLES -A acl_syn_flood -m limit --limit 50/s --limit-burst 100 -j RETURN
-        $IPTABLES -A acl_syn_flood                                         -j DROP
+        $IPTABLES -A dos_limiter    -p tcp --syn                          -j syn_flood
+
+        #
+        # Per-IP rate stats new connections (SYN)
+        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood2 --hashlimit-mode srcip \
+                  --hashlimit-upto   2/sec --hashlimit-burst  4 --hashlimit-htable-expire 60000 -j RETURN
+
+        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood6 --hashlimit-mode srcip \
+                  --hashlimit-upto   6/sec --hashlimit-burst 12 --hashlimit-htable-expire 60000 -j RETURN
+
+        # Per-IP rate limiting new connections (SYN)
+        $IPTABLES -A syn_flood -m hashlimit --hashlimit-name synflood --hashlimit-mode srcip \
+                  --hashlimit-above 10/sec --hashlimit-burst 20 --hashlimit-htable-expire 60000 -j drop_syn_ip
+        #
+        # Global SYN rate limit (last resort)
+        # $IPTABLES -A syn_flood  -m limit --limit 1200/s --limit-burst 2000 -j RETURN
+        # $IPTABLES -A syn_flood                                            -j drop_syn_gl
+        $IPTABLES -A syn_flood                                            -j RETURN
 
         # Per-IP rate limiting for new SSH connections
-        $IPTABLES -A acl_dos_limiter -p tcp --dport 22 \
-                   -m conntrack --ctstate NEW \
-                   -m hashlimit \
-                   --hashlimit-name ssh-limit --hashlimit-mode srcip \
-                   --hashlimit-above 30/min --hashlimit-burst 50 \
-                   --hashlimit-htable-expire 60000 \
-                   -j DROP
+        $IPTABLES -A dos_limiter -p tcp --dport 22 \
+                  -m conntrack --ctstate NEW \
+                  -m hashlimit \
+                  --hashlimit-name ssh-limit --hashlimit-mode srcip \
+                  --hashlimit-above 30/min --hashlimit-burst 50 \
+                  --hashlimit-htable-expire 60000 \
+                  -j drop_dos
 
         # Rate limit new HTTP connections per IP
-        $IPTABLES -A acl_dos_limiter -p tcp --dport 80 \
+        $IPTABLES -A dos_limiter -p tcp --dport 80 \
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name http-limit --hashlimit-mode srcip \
-                  --hashlimit-above 10/s --hashlimit-burst 20 \
+                  --hashlimit-above 5/s --hashlimit-burst 10 \
                   --hashlimit-htable-expire 60000 \
-                  -j DROP
+                  -j drop_dos
 
-        $IPTABLES -A acl_dos_limiter -p tcp --dport 443 \
+        $IPTABLES -A dos_limiter -p tcp --dport 443 \
                   -m conntrack --ctstate NEW \
                   -m hashlimit \
                   --hashlimit-name https-limit --hashlimit-mode srcip \
-                  --hashlimit-above 15/s --hashlimit-burst 30 \
+                  --hashlimit-above 8/s --hashlimit-burst 16 \
                   --hashlimit-htable-expire 60000 \
-                  -j DROP
+                  -j drop_dos
 
         # Limit concurrent SSH connections per IP
-        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 22 \
-                  -m connlimit --connlimit-above 30 -j REJECT
+        $IPTABLES -A dos_limiter -p tcp --syn --dport 22 \
+                  -m connlimit --connlimit-above 30 -j rejc_dos
 
         # Limit concurrent HTTP connections per IP
-        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 80 \
-                  -m connlimit --connlimit-above 10 -j REJECT
-        $IPTABLES -A acl_dos_limiter -p tcp --syn --dport 443 \
-                  -m connlimit --connlimit-above 30 -j REJECT
+        $IPTABLES -A dos_limiter -p tcp --syn --dport 80 \
+                  -m connlimit --connlimit-above 5 -j rejc_dos
+        $IPTABLES -A dos_limiter -p tcp --syn --dport 443 \
+                  -m connlimit --connlimit-above 10 -j rejc_dos
 
-        $IPTABLES -A acl_dos_limiter                -j RETURN
+        $IPTABLES -A dos_limiter                -j RETURN
 
         #
         #########################################################################################################################
