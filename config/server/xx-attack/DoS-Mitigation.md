@@ -37,17 +37,17 @@ Following metrics might be of interest
 - Per Client IP
   - New Connections (syn-flooding)
     - 5/s http
-    - 8/s https
-    - 10/s total
+    - 5/s https
+    - 6/s total
   - Concurrent Connections
-    -  5 http
-    - 10 https
+    - 5 http
+    - 5 https
 
 Further the following new-connection limits per IP
 are counted
--  2/s total
--  6/s total
-- 10/s total
+- 1/s total
+- 3/s total
+- 6/s total
 
 This allows us to estimate the regular connection rate
 and adjust the setup.

@@ -6,7 +6,7 @@ top -bn1 | head | grep Cpu | awk ' { printf "CPU %3d%, ", 100-$8 }' ; uptime | s
 free -h
 echo
 
-printf "total conn %6d, syn  %6d \t\tlisten-drops %6d\t\t\t\t(Netstat Current)\n" \
+printf "total conn %6d, syn  %6d \t\tlisten-drops %9d\t\t\t\t(Netstat Current)\n" \
     $(ss -tan state established | wc -l) \
     $(ss -tan state syn-recv | wc -l) \
     $(netstat -s | grep "SYNs" | awk '{ print $1 }')
