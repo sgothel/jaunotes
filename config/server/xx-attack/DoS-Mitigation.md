@@ -19,9 +19,9 @@ iptables
 - Used [ipv6 script](../02-firewall/etc/iptables/ip6tables_bad_fwdmz_good-secure)
 
 Some references
-- [iptables-extensions.8](https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html)
-- [Understanding iptable’s hashlimit module](https://poorlydocumented.com/2017/08/understanding-iptables-hashlimit-module/)
-- [Ivan Salloum](https://ivansalloum.com/preventing-syn-flood-attacks-on-your-linux-server/)
+- [iptables-extensions.8 (man)](https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html)
+- [Understanding iptable’s hashlimit module (Poorly Documented)](https://poorlydocumented.com/2017/08/understanding-iptables-hashlimit-module/)
+- [Preventing SYN Flood Attacks on Your Linux Server (Ivan Salloum)](https://ivansalloum.com/preventing-syn-flood-attacks-on-your-linux-server/)
 
 #### Monitoring 
 
@@ -55,8 +55,8 @@ and adjust the setup.
 ### Apache
 
 Some references
-- [http/2](https://httpd.apache.org/docs/2.4/howto/http2.html)
-- [mpm\_event](https://httpd.apache.org/docs/2.4/mod/event.html)
+- [http/2 (apache)](https://httpd.apache.org/docs/2.4/howto/http2.html)
+- [mpm\_event (apache)](https://httpd.apache.org/docs/2.4/mod/event.html)
 
 #### Root Apache Server
 
