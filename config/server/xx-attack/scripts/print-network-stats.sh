@@ -61,13 +61,21 @@ printf "syn   ipv4 %6d 1/s, %4d 3/s, %d > 6/s, ipv6  %6d 1/s, %d 3/s, %d > 6/s\t
 
 echo
 
-printf "dos-syn    %6d, ssh %4d, http[bots %7d] \t\t\t\t\t(Banned:     %7d total, dropped %7d)\n" \
-    $(fail2ban-client get dos-syn banned | wc -w) \
-    $(fail2ban-client get sshd banned | wc -w) \
-    $(fail2ban-client get apache-badbots banned | wc -w) \
-    $(fail2ban-client banned | grep -E -o -e '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' -e '([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}' | wc -l) \
+# nft set addr-set-apache-badbots of table f2b-table may contain (a) million(s) of entries,
+# listing them will choke this script!
+#
+#printf "dos-syn    %6d, ssh %4d, http[bots %7d] \t\t\t\t\t(Banned:     %7d total, dropped %7d)\n" \
+#    $(fail2ban-client get dos-syn banned | wc -w) \
+#    $(fail2ban-client get sshd banned | wc -w) \
+#    $(fail2ban-client get apache-badbots banned | wc -w) \
+#    $(fail2ban-client banned | grep -E -o -e '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' -e '([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}' | wc -l) \
+#    $(nft list chain inet f2b-table f2b-chain 2>/dev/null | grep packets | awk ' { sum += $9 } END { print sum }')
+#
+# Instead, query the fail2ban database for the row-count of banned entries (IPs)
+#
+printf "fail2ban banned %7d IPs and dropped %7d packets (nftable)\n" \
+    $(echo "SELECT count (*) from bans;" | sqlite3 -readonly /var/lib/fail2ban/fail2ban.sqlite3) \
     $(nft list chain inet f2b-table f2b-chain 2>/dev/null | grep packets | awk ' { sum += $9 } END { print sum }')
-
 echo
 
 echo "ipv4  dos_limiter"

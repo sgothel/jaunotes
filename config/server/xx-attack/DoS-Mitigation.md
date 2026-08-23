@@ -9,6 +9,7 @@ Notes and summary about DoS Mitigation using
   - Initial syn-flood and DoS mitigation when it happens
   - Logging events to file for pre-emptive fail2ban mitigation
 - [fail2ban](https://github.com/fail2ban/fail2ban)
+  - Filtering log files and conditionally adding/removing `nftables` blocking rules
   - Temporarily preemptive blocking after the event
   - Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
   - Using certain default jails
@@ -55,12 +56,15 @@ Some references
 ## Fail2Ban
 
 [fail2ban](https://github.com/fail2ban/fail2ban)
+- Filtering log files and conditionally adding/removing `nftables` blocking rules
 - Temporarily preemptive blocking after the event
 - Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
 - Using certain default jails
 
-Used configuration
-- [jails](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
+Our [jail setup](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
+- Blocking whole port range, always
+- Default jails sshd, apache-\*, sendmail-\*, dovecot, sieve
+- Our custom jail dos-syn and modded apache-badbots
 
 ### BadBots
 It came to our attention that all of the above wasn't enought.
@@ -76,10 +80,18 @@ and extracts the names into a file `badbots.txt`.
 The latter has to be injected into the filter
 [apache-badbots-jau.conf](../02-firewall/etc/fail2ban/filter.d//apache-badbots-jau.conf).
 
-At this point, it is also a good idea to directly add it to
-`Apache2` where it happens, e.g.
-[bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available/bot-filter-rewrite.conf).
-The latter should then be included in the
+The `apache-badbots` filter (see below), may produce millions of `nfttable` set entries (see below),
+which renders the `nfttable` hashset operations `list`, `add` and `remove` very **slow**.
+However, it seems that the `get` operation is naturally *fast* (hashset).
+
+#### Apache2
+
+At this point, it is also a good idea to also filter the bad bots to
+`Apache2` where it happens in case `fail2ban` has to be reloaded 
+and the `nftables` is restored, which may take a long time.
+
+The snippet [bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available/bot-filter-rewrite.conf)
+should be updated according to above procedure and included in the
 [site-config](../05-services/etc/apache2/sites-available/jogamp_org-ssl.conf).
 
 ## Monitoring
