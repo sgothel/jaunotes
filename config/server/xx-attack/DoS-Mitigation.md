@@ -38,7 +38,9 @@ and these rules are internally translated and added to `nftable` rules on the ke
 Hence the holistic `nftable` conversion steps are as follows
 - dump `nftable` to a text file
 - transfer comments for documentation purposes
-- then simply use the safe `nftable` [atomic rule replacement](https://wiki.nftables.org/wiki-nftables/index.php/Atomic_rule_replacement)
+- then simply use the safe `nftable`
+  [atomic rule replacement](https://wiki.nftables.org/wiki-nftables/index.php/Atomic_rule_replacement)
+  and [scripting](https://wiki.nftables.org/wiki-nftables/index.php/Scripting).
 
 ### Logging
 
