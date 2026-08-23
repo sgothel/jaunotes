@@ -12,8 +12,12 @@ logo-link=https://jogamp.org
 log-level=50
 #log-level=75
 
+max-blob-size=524288
+# max-blob-size=1048576
+
 #cache-lock-timeout=1000
-cache-lock-timeout=4000
+cache-lock-timeout=2000
+#cache-lock-timeout=4000
 #cache-lock-fail=200
 #cache-lock-fail=503
 cache-lock-fail=429
@@ -21,16 +25,19 @@ cache-lock-fail=429
 cache-lock-retry=42
 
 # client-io-idle-timeout=20
-client-io-idle-timeout=5
+#client-io-idle-timeout=5
+#client-io-idle-timeout=4
+client-io-idle-timeout=3
 # client-io-min-rate=500
-client-io-min-rate=1000
+#client-io-min-rate=1000
+client-io-min-rate=2000
 
 # Following lines work with the above Apache config
 #css=/cgit-css/cgit.css
 #logo=/cgit-css/cgit.png
 
 # Allow http transport git clone
-enable-http-clone=1
+enable-http-clone=0
 
 # if you do not want that webcrawler (like google) index your site
 #robots=noindex, nofollow
@@ -46,6 +53,8 @@ virtual-root=/cgit/
 
 # Enable caching of up to n output entries
 #cache-size=100000
+# FFFFFFFFFFFFFFFF 18+E18 (64-bit)
+cache-size=18446744073709551615
 # FFFFFFFF 4294M
 #cache-size=4294967295
 #  FFFFFFF  268M
@@ -55,7 +64,7 @@ virtual-root=/cgit/
 #    FFFFF    1M
 #cache-size=1048575
 #    3FFFF
-cache-size=262143
+#cache-size=262143
 
 # Specify some default clone urls using macro expansion
 # clone-url=https://jogamp.org/cgit/$CGIT_REPO_URL git://jogamp.org/srv/scm/$CGIT_REPO_URL
