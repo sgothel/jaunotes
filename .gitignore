@@ -1,0 +1,4 @@
+/config/server/02-firewall/etc/fail2ban/update-server.sh
+/config/server/02-firewall/etc/fail2ban/scripts/badbots.txt
+/config/server/02-firewall/etc/fail2ban/scripts/robots.json
+/config/server/02-firewall/etc/fail2ban/scripts/robots.txt

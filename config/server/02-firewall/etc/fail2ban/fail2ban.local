@@ -1,0 +1,20 @@
+# Fail2Ban main configuration file
+#
+# Comments: use '#' for comment lines and ';' (following a space) for inline comments
+#
+# Changes:  in most of the cases you should not modify this
+#           file, but provide customizations in fail2ban.local file, e.g.:
+#
+# [DEFAULT]
+# loglevel = DEBUG
+#
+
+[DEFAULT]
+
+# Option: allowipv6
+# Notes.: Allows IPv6 interface:
+#         Default: auto
+# Values: [ auto yes (on, true, 1) no (off, false, 0) ] Default: auto
+#allowipv6 = on
+allowipv6 = on
+

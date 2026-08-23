@@ -61,11 +61,20 @@ printf "syn   ipv4 %6d 1/s, %4d 3/s, %d > 6/s, ipv6  %6d 1/s, %d 3/s, %d > 6/s\t
 
 echo
 
+printf "dos-syn    %6d, ssh %4d, http[bots %7d] \t\t\t\t\t(Banned:     %7d total, dropped %7d)\n" \
+    $(fail2ban-client get dos-syn banned | wc -w) \
+    $(fail2ban-client get sshd banned | wc -w) \
+    $(fail2ban-client get apache-badbots banned | wc -w) \
+    $(fail2ban-client banned | grep -E -o -e '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' -e '([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}' | wc -l) \
+    $(nft list chain inet f2b-table f2b-chain 2>/dev/null | grep packets | awk ' { sum += $9 } END { print sum }')
+
+echo
+
 echo "ipv4  dos_limiter"
-iptables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^10 " | tail -n +2
+iptables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^8 |^10 " | tail -n +2
 echo
 echo "ipv6  dos_limiter"
-ip6tables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^9 |^10 |^13 " | tail -n +2
+ip6tables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^8 |^9 |^10 |^11 |^13 " | tail -n +3
 echo
 
 echo "ipv4  syn-flood"

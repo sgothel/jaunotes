@@ -1,0 +1,6 @@
+[DEFAULT]
+
+# ignorecommand = /path/to/command <ip>
+# ignorecommand = /usr/bin/grep -sqxF <ip> /etc/fail2ban/ignore-ipaddr-file
+
+ignoreip = 127.0.0.1/8 ::1
