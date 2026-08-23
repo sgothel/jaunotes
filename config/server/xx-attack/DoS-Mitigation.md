@@ -32,8 +32,13 @@ Used configuration
 - [ipv6 script](../02-firewall/etc/iptables/ip6tables_bad_fwdmz_good-secure)
 
 The firewall scripts log to `/var/log/firewall/`.
-Automatic conversion to nftables is possible via [xtables-translate](https://www.man7.org/linux/man-pages/man8/iptables-translate.8.html).
-However, we stick with our historical iptables configuration for now.
+Automatic conversion to nftables is possible via [xtables-translate](https://www.man7.org/linux/man-pages/man8/iptables-translate.8.html)
+and these rules are internally translated and added to `nftable` rules on the kernel side.
+
+Hence the holistic `nftable` conversion steps are as follows
+- dump `nftable` to a text file
+- transfer comments for documentation purposes
+- then simply use the safe `nftable` [atomic rule replacement](https://wiki.nftables.org/wiki-nftables/index.php/Atomic_rule_replacement)
 
 ### Logging
 
@@ -87,7 +92,7 @@ However, it seems that the `get` operation is naturally *fast* (hashset).
 #### Apache2
 
 At this point, it is also a good idea to also filter the bad bots to
-`Apache2` where it happens in case `fail2ban` has to be reloaded 
+`Apache2` where it happens in case `fail2ban` has to be reloaded
 and the `nftables` is restored, which may take a long time.
 
 The snippet [bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available/bot-filter-rewrite.conf)
