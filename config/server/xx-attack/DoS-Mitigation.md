@@ -134,9 +134,9 @@ Besides JogAmp, Haskell also had a [very notable incident](https://mailman.haske
 > - Xe noted, that we can proudly say this counts as a DDoS
 
 The perpetrator used `Lightpanda`, see [their issue 3156](https://github.com/lightpanda-io/browser/issues/3156).
-After checking our JogAmp logs .. tada, over 300k banned IPs so far
-and new IP entries are added by the second. A text file w/ containing
-just a list of these 300k offender consumes roughly 6M.
+After checking our JogAmp logs .. tada, over 550k banned IPs so far
+and new IP entries are added by the second.
+The `fail2ban` sqlite database these offender consumes roughly 450MB.
 
 It has to be noted, that this is a distributed DoS (DDos) attack.
 The culprit doesn't act from one IP, which could be easily detected
