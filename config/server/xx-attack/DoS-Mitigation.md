@@ -79,7 +79,7 @@ It came to our attention that all of the above wasn't enought.
 The default filter for the jail `apache-badbots` is out of date
 and we had to update it with contemporart user-agent strings.
 
-[fetch-list.sh](../02-firewall/etc/fail2ban/scripts/fetch-list.sh)
+[make-bot-list.sh](../02-firewall/etc/fail2ban/scripts/make-bot-list.sh)
 fetches [ai-robots-txt](https://github.com/ai-robots-txt/ai.robots.txt)'s
 [robots.txt raw file](https://raw.githubusercontent.com/ai-robots-txt/ai.robots.txt/refs/heads/main/robots.txt)
 and extracts the names into a file `badbots.txt`.
