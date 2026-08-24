@@ -16,7 +16,8 @@ IP_EXTERN_GW=$( /sbin/ip -o -f inet route show dev $ETH_EXTERN | grep default | 
 ##
 ##
 
-IPTABLES=/sbin/iptables
+IPTABLES=/usr/sbin/iptables
+IPSET=/usr/sbin/ipset
 
 if [ "$action" != "start" -a "$action" != "stop" -a "$action" != "restart" ] ; then
         echo usage $0 \( start \| stop \| restart \)
@@ -64,6 +65,11 @@ elif [ "$action" = "stop" ] ; then
         $IPTABLES -X rejc_dos
         $IPTABLES -X
 
+        $IPSET flush badbots_ipv4_ip
+        $IPSET destroy badbots_ipv4_ip
+        $IPSET flush badbots_ipv4_net
+        $IPSET destroy badbots_ipv4_net
+
         $IPTABLES -P INPUT   ACCEPT
         $IPTABLES -P FORWARD ACCEPT
 
@@ -98,6 +104,7 @@ elif [ "$action" = "start" ] ; then
 
         echo 1 > /proc/sys/net/ipv4/conf/$ETH_EXTERN/rp_filter
 
+        /sbin/modprobe ip_set
         /sbin/modprobe iptable_filter
         /sbin/modprobe iptable_mangle
         #/sbin/modprobe iptable_nat
@@ -141,6 +148,9 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -N drop_syn_gl
         $IPTABLES -N drop_dos
         $IPTABLES -N rejc_dos
+
+        $IPSET create badbots_ipv4_ip  hash:ip  family inet
+        $IPSET create badbots_ipv4_net hash:net family inet
 
         ###################################################################
         ###################################################################
@@ -208,10 +218,16 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -p all -A drop_ext -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW4-EXT: drop ext-input "
         $IPTABLES -p all -A drop_ext -j DROP
 
-        ipaddr_file=$(dirname $0)/badbots_ipaddr.txt
+        ipaddr_file=$(dirname $0)/badbots_ipv4_ip.txt
         for ipaddr in `awk -e ' { i=index($1,"#"); if ( 0 == i ) { print $1; } } ' $ipaddr_file` ; do
-            $IPTABLES -p all -A acl_external_input -s $ipaddr -j drop_ext
+            $IPSET add badbots_ipv4_ip $ipaddr
         done
+        ipaddr_file=$(dirname $0)/badbots_ipv4_net.txt
+        for ipaddr in `awk -e ' { i=index($1,"#"); if ( 0 == i ) { print $1; } } ' $ipaddr_file` ; do
+            $IPSET add badbots_ipv4_net $ipaddr
+        done
+        $IPTABLES -p all -A acl_external_input -m set --match-set badbots_ipv4_ip  src         -j drop_ext
+        $IPTABLES -p all -A acl_external_input -m set --match-set badbots_ipv4_net src         -j drop_ext
 
         $IPTABLES -p all -A acl_external_input                                                 -j dos_limiter
 

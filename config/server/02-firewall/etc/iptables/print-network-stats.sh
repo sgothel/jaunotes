@@ -1,1 +1,0 @@
-/usr/local/projects/jausoft/jaunotes/config/server/xx-attack/scripts/print-network-stats.sh

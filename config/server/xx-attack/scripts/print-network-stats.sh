@@ -78,8 +78,16 @@ printf "fail2ban banned %7d IPs and dropped %7d packets (nftable)\n" \
     $(nft list chain inet f2b-table f2b-chain 2>/dev/null | grep packets | awk ' { sum += $9 } END { print sum }')
 echo
 
+echo "ipv4  drop fixed bots"
+iptables -L acl_external_input -n -v --line-numbers | grep -E "^num |^1 |^2"
+echo
+
+echo "ipv6  drop fixed bots"
+ip6tables -L acl_external_input -n -v --line-numbers | grep -E "^1 |^2"
+echo
+
 echo "ipv4  dos_limiter"
-iptables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^8 |^10 " | tail -n +2
+iptables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^8 |^10 " | tail -n +3
 echo
 echo "ipv6  dos_limiter"
 ip6tables -L dos_limiter -n -v --line-numbers | grep -v -E "^2 |^3 |^4 |^5 |^6 |^7 |^8 |^9 |^10 |^11 |^13 " | tail -n +3

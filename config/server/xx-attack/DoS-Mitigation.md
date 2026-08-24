@@ -91,6 +91,17 @@ The `apache-badbots` filter (see below), may produce millions of `nfttable` set 
 which renders the `nfttable` hashset operations `list`, `add` and `remove` very **slow**.
 However, it seems that the `get` operation is naturally *fast* (hashset).
 
+#### BadBots Fixed IP Filter
+
+[make-bot-list.sh](../02-firewall/etc/fail2ban/scripts/make-bot-list.sh)
+also fetches a source of known fixed bot ipv6 and ipv4 addresses and networks,
+which is being copied to ../02-firewall/etc/iptables
+- `badbots_ipv4_ip.txt`
+- `badbots_ipv6_ip.txt`
+- `badbots_ipv4_net.txt`
+- `badbots_ipv6_net.txt`
+and used for our firewall setup.
+
 #### Apache2
 
 At this point, it is also a good idea to also filter the bad bots to

@@ -1,1 +1,0 @@
-../../../../xx-attack/scripts/make-bot-list.sh

@@ -16,7 +16,8 @@ IP_EXTERN_GW=$( /sbin/ip -o -f inet6 route show dev $ETH_EXTERN | grep default |
 ##
 ##
 
-IPTABLES=/sbin/ip6tables
+IPTABLES=/usr/sbin/ip6tables
+IPSET=/usr/sbin/ipset
 
 if [ "$action" != "start" -a "$action" != "stop" -a "$action" != "restart" ] ; then
         echo usage $0 \( start \| stop \| restart \)
@@ -38,6 +39,7 @@ elif [ "$action" = "stop" ] ; then
         $IPTABLES -F acl_srv_shared
         $IPTABLES -F acl_srv_email
         $IPTABLES -F acl_srv_login_sec
+        $IPTABLES -F drop_ext
         $IPTABLES -F drop_icmp
         $IPTABLES -F drop_syn_ip
         $IPTABLES -F drop_syn_gl
@@ -55,12 +57,18 @@ elif [ "$action" = "stop" ] ; then
         $IPTABLES -X acl_srv_shared
         $IPTABLES -X acl_srv_email
         $IPTABLES -X acl_srv_login_sec
+        $IPTABLES -X drop_ext
         $IPTABLES -X drop_icmp
         $IPTABLES -X drop_syn_ip
         $IPTABLES -X drop_syn_gl
         $IPTABLES -X drop_dos
         $IPTABLES -X rejc_dos
         $IPTABLES -X
+
+        $IPSET flush badbots_ipv6_ip
+        $IPSET destroy badbots_ipv6_ip
+        $IPSET flush badbots_ipv6_net
+        $IPSET destroy badbots_ipv6_net
 
         $IPTABLES -P INPUT   ACCEPT
         $IPTABLES -P FORWARD ACCEPT
@@ -86,11 +94,15 @@ elif [ "$action" = "start" ] ; then
         $IPTABLES -N acl_srv_shared
         $IPTABLES -N acl_srv_email
         $IPTABLES -N acl_srv_login_sec
+        $IPTABLES -N drop_ext
         $IPTABLES -N drop_icmp
         $IPTABLES -N drop_syn_ip
         $IPTABLES -N drop_syn_gl
         $IPTABLES -N drop_dos
         $IPTABLES -N rejc_dos
+
+        $IPSET create badbots_ipv6_ip  hash:ip family  inet6
+        $IPSET create badbots_ipv6_net hash:net family inet6
 
         ###################################################################
         ###################################################################
@@ -159,6 +171,20 @@ elif [ "$action" = "start" ] ; then
         #
         # acl_extern_
         #
+        $IPTABLES -p all -A drop_ext -m limit --limit 1/s -j LOG --log-level debug --log-prefix "FW6-EXT: drop ext-input "
+        $IPTABLES -p all -A drop_ext -j DROP
+
+        ipaddr_file=$(dirname $0)/badbots_ipv6_ip.txt
+        for ipaddr in `awk -e ' { i=index($1,"#"); if ( 0 == i ) { print $1; } } ' $ipaddr_file` ; do
+            $IPSET add badbots_ipv6_ip $ipaddr
+        done
+        ipaddr_file=$(dirname $0)/badbots_ipv6_net.txt
+        for ipaddr in `awk -e ' { i=index($1,"#"); if ( 0 == i ) { print $1; } } ' $ipaddr_file` ; do
+            $IPSET add badbots_ipv6_net $ipaddr
+        done
+        $IPTABLES -p all -A acl_external_input -m set --match-set badbots_ipv6_net  src        -j drop_ext
+        $IPTABLES -p all -A acl_external_input -m set --match-set badbots_ipv6_ip   src        -j drop_ext
+
         $IPTABLES -p all -A acl_external_input                                                 -j dos_limiter
 
         # Protocol rules
