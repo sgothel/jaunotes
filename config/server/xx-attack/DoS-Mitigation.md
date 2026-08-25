@@ -80,7 +80,11 @@ Additionally we need to filter out bad bot requests,
 identified by http header as well as known IP addresses.
 
 ### BadBots By User-Agent
-The default filter for the jail `apache-badbots` is out of date
+We let `httpd` check the [User-Agent](https://http.dev/user-agent)
+http header to deny access from `httpd` as well as to have `fail2ban` block the IP via our firewall,
+by parsing the `httpd` log files.
+
+The default filter for the `fail2ban` jail `apache-badbots` is out of date
 and we had to update it with contemporary `User-Agent` strings,
 send by the client in the http header.
 
@@ -99,7 +103,7 @@ However, it seems that the `get` operation is naturally *fast* (hashset).
 
 #### Apache2
 At this point, it is a good idea to also filter the bad bots
-from the `User-Agent` http header within
+from the [User-Agent](https://http.dev/user-agent) http header within
 `Apache2`, where it happens in case `fail2ban` has to be reloaded
 and the `nftables` is restored, which may take a long time.
 
@@ -108,9 +112,9 @@ should be updated according to above procedure and included in the
 [site-config](../05-services/etc/apache2/sites-available/jogamp_org-ssl.conf).
 
 ### BadBots by Sec-CH-UA
-Further, we let the `httpd` check the [HTTP Client hints (httpdev)](https://http.dev/client-hints)
+Further, we let `httpd` check the [HTTP Client hints (httpdev)](https://http.dev/client-hints)
 [(mozilla)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Client_hints)
-to directly deny access and to add details to the log file to signal `fail2ban` to block the site via our firewall.
+to add details to the `User-Agent` portion in the log file to signal `fail2ban` to block the IP via our firewall.
 
 Here is a nice article
 [Fight bad bot with Sec Fetch and Client Hints](https://blog.sicuranext.com/sec-fetch-and-client-hints-a-powerful-tool-against-automation/),
@@ -123,6 +127,10 @@ is send by default w/o being requested, similar to the [User-Agent (httpdev)](ht
 #### Apache2
 See site-configuration example below to detect `Lightpanda` in the `Sec-CH-UA` http header
 and to prepend it's signature to the `User-Agent` log file segment.
+
+It seems not be possible to deny acces in `Apache2`
+via the `RewriteRule`, since it would drop the `RequestHeader`
+operation and hence would lock `fail2ban` detection via log files.
 
 Here is a simple and fast matcher, even working with multiple brand and version tuples
 inside the header field.
