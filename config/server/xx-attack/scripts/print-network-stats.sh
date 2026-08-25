@@ -73,8 +73,9 @@ echo
 #
 # Instead, query the fail2ban database for the row-count of banned entries (IPs)
 #
-printf "fail2ban banned %7d IPs and dropped %7d packets (nftable)\n" \
+printf "fail2ban banned %7d / %7d IPs and dropped %7d packets (nftable)\n" \
     $(echo "SELECT count (*) from bans;" | sqlite3 -readonly /var/lib/fail2ban/fail2ban.sqlite3) \
+    $(echo "SELECT count (*) from bips;" | sqlite3 -readonly /var/lib/fail2ban/fail2ban.sqlite3) \
     $(nft list chain inet f2b-table f2b-chain 2>/dev/null | grep packets | awk ' { sum += $9 } END { print sum }')
 echo
 
