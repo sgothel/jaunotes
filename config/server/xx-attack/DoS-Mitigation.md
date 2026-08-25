@@ -71,52 +71,71 @@ Some references
 Our [jail setup](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
 - Blocking whole port range, always
 - Default jails sshd, apache-\*, sendmail-\*, dovecot, sieve
-- Our custom jail dos-syn and modded apache-badbots
+- Our custom jail dos-syn and modded `apache-badbots`
 
-### BadBots
+## BadBots
 It came to our attention that all of the above wasn't enought.
 
+Additionally we need to filter out bad bot requests,
+identified by http header as well as known IP addresses.
+
+### BadBots By User-Agent
 The default filter for the jail `apache-badbots` is out of date
-and we had to update it with contemporart user-agent strings.
+and we had to update it with contemporary `User-Agent` strings,
+send by the client in the http header.
 
 [make-bot-list.sh](../02-firewall/etc/fail2ban/scripts/make-bot-list.sh)
 fetches [ai-robots-txt](https://github.com/ai-robots-txt/ai.robots.txt)'s
 [robots.txt raw file](https://raw.githubusercontent.com/ai-robots-txt/ai.robots.txt/refs/heads/main/robots.txt)
 and extracts the names into a file `badbots.txt`.
 
-The latter has to be injected into the filter
-[apache-badbots-jau.conf](../02-firewall/etc/fail2ban/filter.d//apache-badbots-jau.conf).
+The latter has to be injected into the `fail2ban` filter
+[apache-badbots-jau.conf](../02-firewall/etc/fail2ban/filter.d//apache-badbots-jau.conf)
+for our custom `apache-badbots` jail.
 
-The `apache-badbots` filter (see below), may produce millions of `nfttable` set entries (see below),
+The `apache-badbots` jail, may produce millions of `nfttable` set entries (see below),
 which renders the `nfttable` hashset operations `list`, `add` and `remove` very **slow**.
 However, it seems that the `get` operation is naturally *fast* (hashset).
 
-#### BadBots Fixed IP Filter
-
-[make-bot-list.sh](../02-firewall/etc/fail2ban/scripts/make-bot-list.sh)
-also fetches a source of known fixed bot ipv6 and ipv4 addresses and networks,
-which is being copied to ../02-firewall/etc/iptables
-- `badbots_ipv4_ip.txt`
-- `badbots_ipv6_ip.txt`
-- `badbots_ipv4_net.txt`
-- `badbots_ipv6_net.txt`
-and used for our firewall setup.
-
 #### Apache2
-
-At this point, it is also a good idea to also filter the bad bots to
-`Apache2` where it happens in case `fail2ban` has to be reloaded
+At this point, it is a good idea to also filter the bad bots
+from the `User-Agent` http header within
+`Apache2`, where it happens in case `fail2ban` has to be reloaded
 and the `nftables` is restored, which may take a long time.
 
 The snippet [bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available/bot-filter-rewrite.conf)
 should be updated according to above procedure and included in the
 [site-config](../05-services/etc/apache2/sites-available/jogamp_org-ssl.conf).
 
-Further, we will check the [Sec-CH-UA request-header](https://http.dev/sec-ch-ua)
-in `Apache2` and if significant, prepend its known bot-signature to the `User-Agent` header.
-This helps to mitigate missing bots, in case their abuser change the `User-Agent` ID,
-but leaving the `Sec-CH-UA` intact.
-See site-configuration example below, detecting `Lightpanda`:
+### BadBots by Sec-CH-UA
+Further, we let the `httpd` check the [HTTP Client hints (httpdev)](https://http.dev/client-hints)
+[(mozilla)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Client_hints)
+to directly deny access and to add details to the log file to signal `fail2ban` to block the site via our firewall.
+
+Here is a nice article
+[Fight bad bot with Sec Fetch and Client Hints](https://blog.sicuranext.com/sec-fetch-and-client-hints-a-powerful-tool-against-automation/),
+and a list of all [user agent client hints (mozilla)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#user_agent_client_hints).
+
+Particularly the http header [Sec-CH-UA (httpdev)](https://http.dev/sec-ch-ua)
+ ([mozilla](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-CH-UA))
+is send by default w/o being requested, similar to the [User-Agent (httpdev)](https://http.dev/user-agent).
+
+#### Apache2
+See site-configuration example below to detect `Lightpanda` in the `Sec-CH-UA` http header
+and to prepend it's signature to the `User-Agent` log file segment.
+
+Here is a simple and fast matcher, even working with multiple brand and version tuples
+inside the header field.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RewriteCond %{HTTP:Sec-CH-UA}  Lightpanda [NC]
+RewriteRule . - [E=HDR_SEC_CH_UA:1]
+RequestHeader edit User-Agent ^ "Lightpanda/1.0 " env=HDR_SEC_CH_UA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+or more fancy w/ elaborated brand and version detection, but slower.
+This is also still erroneous, since this header may contain multiple
+brand and version tuples.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ([^;]+)(?:;v=(.+))?
@@ -125,13 +144,15 @@ RewriteRule . - [E=HDR_SEC_CH_UA_BRAND:%1,E=HDR_SEC_CH_UA_VERSION:%2]
 RequestHeader edit User-Agent ^ "%{HDR_SEC_CH_UA_BRAND}e/%{HDR_SEC_CH_UA_VERSION}e " env=HDR_SEC_CH_UA_BRAND
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-or less fancy and probably faster and to the point
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-RewriteCond %{HTTP:Sec-CH-UA}  Lightpanda [NC]
-RewriteRule . - [E=HDR_SEC_CH_UA:1]
-RequestHeader edit User-Agent ^ "Lightpanda/1.0 " env=HDR_SEC_CH_UA
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### BadBots by Fixed IP
+[make-bot-list.sh](../02-firewall/etc/fail2ban/scripts/make-bot-list.sh)
+also fetches a source of known fixed bot ipv6 and ipv4 addresses and networks,
+which is being copied to ../02-firewall/etc/iptables
+- `badbots_ipv4_ip.txt`
+- `badbots_ipv6_ip.txt`
+- `badbots_ipv4_net.txt`
+- `badbots_ipv6_net.txt`
+and used for our firewall setup.
 
 ## Monitoring
 
