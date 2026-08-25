@@ -125,6 +125,14 @@ RewriteRule . - [E=HDR_SEC_CH_UA_BRAND:%1,E=HDR_SEC_CH_UA_VERSION:%2]
 RequestHeader edit User-Agent ^ "%{HDR_SEC_CH_UA_BRAND}e/%{HDR_SEC_CH_UA_VERSION}e " env=HDR_SEC_CH_UA_BRAND
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+or less fancy and probably faster and to the point
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RewriteCond %{HTTP:Sec-CH-UA}  Lightpanda [NC]
+RewriteRule . - [E=HDR_SEC_CH_UA:1]
+RequestHeader edit User-Agent ^ "Lightpanda/1.0 " env=HDR_SEC_CH_UA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ## Monitoring
 
 The shell script [print-network-stats.sh](scripts/print-network-stats.sh)
