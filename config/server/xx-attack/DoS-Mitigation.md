@@ -112,6 +112,19 @@ The snippet [bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available
 should be updated according to above procedure and included in the
 [site-config](../05-services/etc/apache2/sites-available/jogamp_org-ssl.conf).
 
+Further, we will check the [Sec-CH-UA request-header](https://http.dev/sec-ch-ua)
+in `Apache2` and if significant, prepend its known bot-signature to the `User-Agent` header.
+This helps to mitigate missing bots, in case their abuser change the `User-Agent` ID,
+but leaving the `Sec-CH-UA` intact.
+See site-configuration example below, detecting `Lightpanda`:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ([^;]+)(?:;v=(.+))?
+RewriteCond %{HTTP:Sec-CH-UA}  (Lightpanda)(?:;v=(.+))? [NC]
+RewriteRule . - [E=HDR_SEC_CH_UA_BRAND:%1,E=HDR_SEC_CH_UA_VERSION:%2]
+RequestHeader edit User-Agent ^ "%{HDR_SEC_CH_UA_BRAND}e/%{HDR_SEC_CH_UA_VERSION}e " env=HDR_SEC_CH_UA_BRAND
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ## Monitoring
 
 The shell script [print-network-stats.sh](scripts/print-network-stats.sh)
