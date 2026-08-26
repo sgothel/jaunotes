@@ -1,0 +1,12 @@
+# fail2ban-regex data/bot-pattern.txt filter.d/apache-badbots-jau.conf
+# Lines: 10 lines, 0 ignored, 9 matched, 1 missed
+1.1.1.1 - - [26/Aug/2026:01:03:54 +0200] "GET / HTTP/2.0" 403 533 "-" "Lightpanda/1.0"
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Lightpanda/1.0" "-"
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Lightpanda/1.0" "\"Lightpanda\";v=\"1\""
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Mozilla/5.0" "Lightpanda;v=1"
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Mozilla/5.0" "\"Lightpanda\";v=\"1\""
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Mozilla/5.0" "\" Not A;Brand\";v=\"99\", "\Chromium"\;v="\96"\, "\Microsoft Edge"\;v=\"96\", \"Lightpanda\";v=\"1\""
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Mozilla/5.0" "\" Not A;Brand\";v=\"99\", "\Chromium"\;v="\96"\, \"Lightpanda\";v=\"1\", "\Microsoft Edge"\;v=\"96\""
+1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Mozilla/5.0" "\"Lightpanda\";v=\"1\", \" Not A;Brand\";v=\"99\", "\Chromium"\;v="\96"\, "\Microsoft Edge"\;v=\"96\""
+1.1.1.1 - - [26/Aug/2026:03:02:47 +0200] "GET / HTTP/2.0" 403 536 "-" "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)" "-"
+1.1.1.1 - - [26/Aug/2026:03:03:02 +0200] "GET / HTTP/2.0" 404 529 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\""
