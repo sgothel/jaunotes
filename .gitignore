@@ -1,3 +1,4 @@
+/config/server/02-firewall/etc/fail2ban/data/
 /config/server/02-firewall/etc/fail2ban/scripts
 /config/server/02-firewall/etc/fail2ban/badbots.txt
 /config/server/xx-attack/data/
