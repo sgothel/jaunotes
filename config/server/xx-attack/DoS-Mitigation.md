@@ -107,7 +107,7 @@ this filter uses the following regexp
 ~~~~~~~~~~~~~~~~~~
 # HOST        DATE                         REQUEST                  REF User-Agent       Sec-CH-UA
 # 1.1.1.1 - - [26/Aug/2026:02:56:58 +0200] "GET / HTTP/2.0" 403 533 "-" "Lightpanda/1.0" "\"Lightpanda\";v=\"1\""
-failregex = (?i)^<HOST> -[^"]*"(GET|POST|HEAD)[^"]*HTTP.[^"]*" \d+ \d+ "[^"]+" "(?:(?:%(badbots)s|%(badbotscustom)s|%(badbotsupdate)s)[^"]*".*|[^"]*" "(?:\\"|[^"])*(?:%(badbotsupdate)s).*"$
+failregex = (?i)^<HOST> -[^"]*"(GET|POST|HEAD)[^"]*HTTP.[^"]*" \d+ \d+ "[^"]+" "(?:(?:%(badbots)s|%(badbotscustom)s|%(badbotsupdate)s)|[^"]*" "(?:\"|[^"])*(?:%(badbotsecchua)s))[^"]*".*$
 ~~~~~~~~~~~~~~~~~~
 
 See below how to configure the extended combined `httpd` log w/ the `Sec-CH-UA`.
