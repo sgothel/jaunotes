@@ -120,7 +120,7 @@ However, it seems that the `get` operation is naturally *fast* (hashset).
 At this point, it is a good idea to also filter the bad bots
 from the [User-Agent](https://http.dev/user-agent) and
 [Sec-CH-UA](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-CH-UA)
-http header within `Apache2`, where it happens in case `fail2ban` has to be reloaded
+http header within [Apache2](https://httpd.apache.org/), where it happens in case `fail2ban` has to be reloaded
 and the `nftables` is restored, which may take a long time.
 
 The snippet [bot-filter-rewrite.conf](../05-services/etc/apache2/sites-available/bot-filter-rewrite.conf)
@@ -212,6 +212,94 @@ The abuse by these AI users are biting the hand they feed
 - abusing server to the point where one could give up, content is gone
 - wasting small resources and energy only for their AI training
 
+## `cgit`
+To tame [cgit](https://git.zx2c4.com/cgit/about/) for our tasks running under
+[Apache2](https://httpd.apache.org/) with [suEXEC](https://httpd.apache.org/docs/current/suexec.html),
+I had to add a few patches on top - which are not merged yet
+- My [cgit branch](https://jausoft.com/cgit/cgit.git/log/)
+
+Further I created `cgit-reaper`
+- See [cgit-reaper repo](https://jausoft.com/cgit/cgit-reaper.git/about/)
+
+### DoS: Mitigate  lack of `suEXEC` signal Propagation
+On our server I exclusively use [suEXEC](https://httpd.apache.org/docs/current/suexec.html)
+and DoS bots causing high-resource utilization (load > 10000),
+which brought the system w/ ZFS to its knees.
+
+First I set the
+[`Apache2` core-config `Timeout = 10`](https://httpd.apache.org/docs/current/mod/core.html#timeout),
+which should propagate `SIGTERM` when it has been reached w/o response from the CGI process.
+However, the `suEXEC` CGI execution environment does not propagate any signals
+to the process running under a different user and environment.
+
+Last resort, setting an explicit `cgit` `timeout=6`
+(Giving 2s for Apache2 to detect cgit ended, minimum).
+The SIGALRM finally brought down instances taking too long.
+
+My related *impatient* configuration,
+considering waiting for a webpage longer than 6s is not realistic:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Apache Timeout is 10s, i.e. cgit to timeout ~2s before minimum (holding bots back)
+timeout=6
+
+# limit blob-size, i.e. what we transfer to the html UI
+max-blob-size=250000
+
+# should happen fast, otherwise server is overloaded
+cache-lock-timeout=2000
+
+# if locking the lock-file fails, don't send a newly generated file,
+# but HTTP error 429 w/ retry in 42s parameter
+cache-lock-fail=429
+cache-lock-retry=42
+
+# time delta >= 3s between receives indicates DoS
+client-io-idle-timeout=3
+
+# Bps rate < 15k (ISDN decades ago) indicates DoS / Slow-Attack
+client-io-min-rate=15000
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The above setup also utilizes previous added mitigations,
+i.e. all other configuration regarding lock-failure, io-idle-timeout
+and io-min-rate - which also support denying slow-attacks.
+
+Additionally [mod\_reqtimeout](https://httpd.apache.org/docs/current/mod/mod_reqtimeout.html),
+may be used to avoid slow attacks,
+where I reduced the parameter to similar *impatient* constraints:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RequestReadTimeout header=2-6,minrate=7000
+
+RequestReadTimeout body=3,minrate=7000
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### Hash Optimization
+
+Using a full [64bit FNV-1a hash](http://www.isthe.com/chongo/tech/comp/fnv/)
+mitigates collision and can be setup via `cache-size`.
+Previous code-base used the 32-bit hash value, wrongly clipped.
+
+A 64-bit hash however leads to the issues of requiring another process to
+reap the exceeding files, as we surely don't want to have 2^64 files cached.
+
+This is where [cgit-reaper](https://jausoft.com/cgit/cgit-reaper.git/about/)
+comes to use, as it uses a new `cache-max-files` configuration
+read from same `cgitrc`.
+
+cgitrc config example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# new cgit-reaper config (defaults)
+pid-parent-dir=/var/run
+cache-max-files=1048576
+cache-min-ttl=1
+cache-max-ttl=525600
+
+# shared cgit/cgit-reaper config (full 64-bit hash)
+cache-size=18446744073709551615
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Apache
 
