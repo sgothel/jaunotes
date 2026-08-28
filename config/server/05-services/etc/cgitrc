@@ -12,7 +12,11 @@ logo-link=https://jogamp.org
 log-level=50
 #log-level=75
 
-max-blob-size=524288
+# Apache Timeout is 10s, i.e. cgit to timeout ~2s before minimum (holding bots back)
+timeout=6
+
+max-blob-size=250000
+#max-blob-size=524288
 # max-blob-size=1048576
 
 #cache-lock-timeout=1000
@@ -30,7 +34,8 @@ cache-lock-retry=42
 client-io-idle-timeout=3
 # client-io-min-rate=500
 #client-io-min-rate=1000
-client-io-min-rate=2000
+#client-io-min-rate=2000
+client-io-min-rate=15000
 
 # Following lines work with the above Apache config
 #css=/cgit-css/cgit.css
