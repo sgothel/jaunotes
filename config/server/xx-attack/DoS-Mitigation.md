@@ -235,7 +235,7 @@ which should propagate `SIGTERM` when it has been reached w/o response from the 
 However, the `suEXEC` CGI execution environment does not propagate any signals
 to the process running under a different user and environment.
 
-Last resort, setting an explicit `cgit` `timeout=6`
+Last resort, setting an explicit `cgit` `timeout=8`
 (Giving 2s for Apache2 to detect cgit ended, minimum).
 The SIGALRM finally brought down instances taking too long.
 
@@ -244,7 +244,7 @@ considering waiting for a webpage longer than 6s is not realistic:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Apache Timeout is 10s, i.e. cgit to timeout ~2s before minimum (holding bots back)
-timeout=6
+timeout=8
 
 # limit blob-size, i.e. what we transfer to the html UI
 max-blob-size=250000

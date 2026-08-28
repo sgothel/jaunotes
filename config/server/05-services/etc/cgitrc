@@ -13,7 +13,7 @@ log-level=50
 #log-level=75
 
 # Apache Timeout is 10s, i.e. cgit to timeout ~2s before minimum (holding bots back)
-timeout=6
+timeout=8
 
 max-blob-size=250000
 #max-blob-size=524288
