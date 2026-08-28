@@ -212,8 +212,11 @@ The abuse by these AI users are biting the hand they feed
 - abusing server to the point where one could give up, content is gone
 - wasting small resources and energy only for their AI training
 
-## cgit
-To tame [cgit](https://git.zx2c4.com/cgit/about/) for our tasks running under
+## cgit - Web Frontend for Git Repositories
+[cgit](https://git.zx2c4.com/cgit/about/) is a web frontend for [Git](https://git-scm.com/)
+repositories, written in C.
+
+To tame `cgit` for our tasks running under
 [Apache2](https://httpd.apache.org/) with [suEXEC](https://httpd.apache.org/docs/current/suexec.html),
 I had to add a few patches on top - which are not merged yet
 - My [cgit branch](https://jausoft.com/cgit/cgit.git/log/)
