@@ -212,7 +212,7 @@ The abuse by these AI users are biting the hand they feed
 - abusing server to the point where one could give up, content is gone
 - wasting small resources and energy only for their AI training
 
-## `cgit`
+## cgit
 To tame [cgit](https://git.zx2c4.com/cgit/about/) for our tasks running under
 [Apache2](https://httpd.apache.org/) with [suEXEC](https://httpd.apache.org/docs/current/suexec.html),
 I had to add a few patches on top - which are not merged yet
