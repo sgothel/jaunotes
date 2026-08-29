@@ -246,8 +246,8 @@ considering waiting for a webpage longer than 6s is not realistic:
 # Apache Timeout is 10s, i.e. cgit to timeout ~2s before minimum (holding bots back)
 timeout=8
 
-# limit blob-size, i.e. what we transfer to the html UI
-max-blob-size=250000
+# limit to 1MB blob-size, i.e. what we transfer to the html UI
+max-blob-size=1024
 
 # should happen fast, otherwise server is overloaded
 cache-lock-timeout=2000
