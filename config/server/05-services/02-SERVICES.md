@@ -340,19 +340,6 @@ a second apache2-bugzille using mpm_prefork + mod_perl.
 apt install php8.4 php8.4-apcu php8.4-bcmath php8.4-bz2 php8.4-cgi php8.4-cli php8.4-common php8.4-curl php8.4-gd php8.4-gmp php8.4-imagick php8.4-intl php8.4-ldap php8.4-mbstring php8.4-mysql php8.4-opcache php8.4-phpdbg php8.4-readline php8.4-xml php8.4-zip
 ```
 
-### PHP 8.2 (Debian 12)
-PHP 8.2 is required by wikimedia.
-
-```
-apt install php8.2 php8.2-apcu php8.2-bcmath php8.2-bz2 php8.2-cgi php8.2-cli php8.2-common php8.2-curl php8.2-gd php8.2-gmp php8.2-imagick php8.2-intl php8.2-ldap php8.2-mbstring php8.2-mysql php8.2-opcache php8.2-phpdbg php8.2-readline php8.2-xml php8.2-zip
-```
-
-### PHP 8.2 (Debian 13)
-PHP 8.2 is required by wikimedia through Apache2.
-
-No need to to force php8.2 to php on commandline (alternative)
-as we utilize matching runner scripts.
-
 #### Add SURY to repo
 See [Debian Additional PHP Versions using SURY](https://wiki.debian.org/AdditionalPHPVersions)
 
@@ -370,11 +357,6 @@ Signed-By: /usr/share/keyrings/debsuryorg-archive-keyring.gpg
 EOF
 apt-get update
 apt-cache policy php
-```
-
-#### Install Custom PHP 8.2
-```
-apt install php8.2 php8.2-apcu php8.2-bcmath php8.2-bz2 php8.2-cgi php8.2-cli php8.2-common php8.2-curl php8.2-gd php8.2-gmp php8.2-imagick php8.2-intl php8.2-ldap php8.2-mbstring php8.2-mysql php8.2-opcache php8.2-phpdbg php8.2-readline php8.2-xml php8.2-zip
 ```
 
 ### Generic
@@ -494,6 +476,7 @@ apt install libgdbm-dev libgdbm6
 
 
 ## Mediawiki
+- Install version >= 1.46 w/ php8.4
 - https://www.mediawiki.org/wiki/Download
 
 - Vector skin (default):
@@ -502,13 +485,19 @@ apt install libgdbm-dev libgdbm6
         @html-font-size: 95%;
 
 - git install
-  - cd <webroot>
-  - chown -R user:user .
-  - git clone --recurse-submodules https://gerrit.wikimedia.org/r/mediawiki/core.git mediawiki-git
-  - ln -s mediawiki-git wiki
-  - Edit LocalSettings.php
-  - chown -R webrunner:webrunner .
-  - chmod 400 LocalSettings.php
+  ```
+  cd <webroot>
+  chown -R user:user .
+  git clone --recurse-submodules https://gerrit.wikimedia.org/r/mediawiki/core.git mediawiki-git
+  ln -s mediawiki-git wiki
+  cd wiki
+  git branch REL1\_46\_1 1.46.1
+  git checkout REL1\_46\_1
+  git submodule update --recursive
+  vi LocalSettings.php
+  chown -R webrunner:webrunner .
+  chmod 400 LocalSettings.php
+  ```
 
 - Caching Setup in LocalSettings.php
     $wgUseFileCache = true; // default: false
@@ -537,9 +526,9 @@ apt install libgdbm-dev libgdbm6
       - git checkout --track -b main origin/main
     - git pull
     - Patch for MediaWiki 1.41
-      - Apply commit-c99dc10-wiki1_41-01.patch
-        - git checkout -b wiki_fix_1_41
-        - git am commit-c99dc10-wiki1_41-01.patch
+      - Apply commit-c99dc10-wiki1\_41-01.patch
+        - git checkout -b wiki\_fix\_1\_41
+        - git am commit-c99dc10-wiki1\_41-01.patch
 
   - we use git remote https://gerrit.wikimedia.org/r/mediawiki/core.git
   - git status
@@ -547,34 +536,13 @@ apt install libgdbm-dev libgdbm6
     - or squash your local changes
   - git fetch --all
 
-  - See upgrade script in scripts/wiki_toversion.sh
-    - scripts/wiki_toversion.sh REL1_42
-    - scripts/wiki_toversion.sh REL1_43
-    - scripts/wiki_toversion.sh REL1_44
-
-  - Upgrade to 1.40
-    - git checkout --track -b REL1_40 origin/REL1_40
-    - git submodule update --recursive
-    - **** DISABLE ALL Skins but Vector ****
-    - php8.2 maintenance/run.php update
-    - chown -R webrunner:webrunner .
-
-  ...
-
-  - Upgrade to 1.41
-    - git checkout --track -b REL1_41 origin/REL1_41
-    - git submodule update --recursive
-    - **** Apply Bugzilla, see above ****
-    - php maintenance/runScript.php maintenance/update.php
-    - chown -R webrunner:webrunner .
-
-  ...
-
-  - Upgrade to 1.44
-    - git checkout --track -b REL1_44 origin/REL1_44
-    - git submodule update --recursive
-    - php8.2 maintenance/run.php update
-    - chown -R webrunner:webrunner .
+  - Upgrade to 1.46.2
+    ```
+    git fetch --all
+    git branch REL1_46_2 1.46.2
+    git checkout REL1_46_2
+    git submodule update --recursive
+    ```
 
 - chown -R webrunner:webrunner .
 - chmod 400 LocalSettings.php
@@ -585,7 +553,7 @@ apt install libgdbm-dev libgdbm6
 
     /etc/init.d/apache2 start
 
-## jogamp_web daemons ..
+## jogamp\_web daemons ..
 
 ### Crontab
 ```
