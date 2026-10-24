@@ -7,12 +7,15 @@ Notes and summary about DoS Mitigation using
   - Further optimizations
 - [iptables](https://www.netfilter.org/projects/iptables/index.html) and [nftables](https://www.netfilter.org/projects/nftables/index.html)
   - Initial syn-flood and DoS mitigation when it happens
-  - Logging events to file for pre-emptive fail2ban mitigation
+  - Logging events to file for optional pre-emptive fail2ban mitigation
 - [fail2ban](https://github.com/fail2ban/fail2ban)
   - Filtering log files and conditionally adding/removing `nftables` blocking rules
   - Temporarily preemptive blocking after the event
   - Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
   - Using certain default jails
+- [anubis](https://anubis.techaro.lol/)
+  - Proof of work for web-client browser to distinguish between humans and bad-bots
+  - Adds further bad-bot detection analysis including GeoIP and honeypots
 
 Also see [Server Connection Limitation and Timeouts](../doc/server-limits_timeouts.md).
 
@@ -72,6 +75,63 @@ Our [jail setup](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
 - Blocking whole port range, always
 - Default jails sshd, apache-\*, sendmail-\*, dovecot, sieve
 - Our custom jail dos-syn and modded `apache-badbots`
+
+## Anubis
+[anubis](https://anubis.techaro.lol/)
+- [Why is Anubis showing up on a website?](https://github.com/TecharoHQ/anubis/issues/25#issuecomment-2744089227)
+- Proof of work for web-client browser to distinguish between humans and bad-bots
+- Adds further bad-bot detection analysis including GeoIP and honeypots
+
+We have to see whether this threshold works against bots.
+It has been noted that [its costs](https://fzakaria.com/2026/07/09/who-does-anubis-actually-stop)
+could be considerably high. However, the bot attack itself stops our
+server from responding, causing lengthily waiting times and hence power consumption.
+The author already noted once, that the AI bots can solve the challenge
+as there are many tools available already. We will see.
+
+### Configuration
+Our [apache2 setup](../02-firewall/etc/anubis/)
+almost uses the default settings.
+
+```
+# install
+apt install ./anubis_1.28.2_amd64.deb
+
+# Configure
+
+# add user and group anubis
+useradd anubis
+chown -R anubis:anubis /etc/anubis
+
+# Add User=anubis and Group=anubis to [service]
+vi /usr/lib/systemd/system/anubis@.service
+
+mkdir -p /var/lib/private/anubis
+chown -R anubis:anubis /var/lib/private/anubis
+
+# Add /etc/tmpfiles.d/anubis.conf
+echo "d /run/anubis 0755 anubis anubis -" > /etc/tmpfiles.d/anubis.conf
+mkdir /run/anubis/
+chown -R anubis:anubis /run/anubis/
+
+cp /etc/anubis/default.env /etc/anubis/apache2.env
+cp /usr/share/doc/anubis/botPolicies.yaml /etc/anubis/apache2.botPolicies.yaml
+cd /etc/anubis
+vi apache2.env apache2.botPolicies.yaml
+
+systemctl daemon-reload
+systemctl enable --now anubis@apache2.service
+systemctl status anubis@apache2
+
+cd /etc/apache2
+a2enmod remoteip
+# Add port 3001
+vi ports.conf
+# redir all :443 to :8923
+# receive at :3001
+vi 001-my-site.conf
+systemctl restart apache2
+```
 
 ## BadBots
 It came to our attention that all of the above wasn't enought.
