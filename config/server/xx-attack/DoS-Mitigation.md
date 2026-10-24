@@ -125,6 +125,7 @@ vi apache2.botPolicies.yaml
 systemctl daemon-reload
 systemctl enable --now anubis@apache2.service
 systemctl status anubis@apache2
+curl http://localhost:9090/metrics
 
 cd /etc/apache2
 a2enmod remoteip
