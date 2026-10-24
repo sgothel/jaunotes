@@ -117,7 +117,10 @@ chown -R anubis:anubis /run/anubis/
 cp /etc/anubis/default.env /etc/anubis/apache2.env
 cp /usr/share/doc/anubis/botPolicies.yaml /etc/anubis/apache2.botPolicies.yaml
 cd /etc/anubis
+# don't forget to add `ED25519_PRIVATE_KEY_HEX` via `openssl rand -hex 32`
 vi apache2.env apache2.botPolicies.yaml
+# adjust if you like
+vi apache2.botPolicies.yaml
 
 systemctl daemon-reload
 systemctl enable --now anubis@apache2.service
