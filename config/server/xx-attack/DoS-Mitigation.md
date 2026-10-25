@@ -36,6 +36,11 @@ General flow:
     Anubis       -> Apache2 :3001
 ```
 
+As a final test, don't forget to check whether your setup has blocked `letsencrypt`
+```
+certbot renew -v --dry-run
+```
+
 ## Linux Kernel
 Used [sysctl configuration](../05-services/etc/sysctl.d/01-jau_defaults.conf)
 - See [sysctl](https://linux.die.net/man/8/sysctl)
