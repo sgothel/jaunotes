@@ -60,26 +60,26 @@ bots:
 
   # Requires GeoIP configuration, see:
   # https://anubis.techaro.lol/docs/admin/geoip
-  - name: countries-with-aggressive-scrapers
-    action: WEIGH
-    geoip:
-      countries:
-        - BR
-        - CN
-    weight:
-      adjust: 10
+  #- name: countries-with-aggressive-scrapers
+  #  action: WEIGH
+  #  geoip:
+  #    countries:
+  #      - BR
+  #      - CN
+  #  weight:
+  #    adjust: 10
 
   # Requires GeoIP configuration, see:
   # https://anubis.techaro.lol/docs/admin/geoip
-  - name: aggressive-asns-without-functional-abuse-contact
-    action: WEIGH
-    asns:
-      match:
-        - 13335 # Cloudflare
-        - 136907 # Huawei Cloud
-        - 45102 # Alibaba Cloud
-    weight:
-      adjust: 10
+  #- name: aggressive-asns-without-functional-abuse-contact
+  #  action: WEIGH
+  #  asns:
+  #    match:
+  #      - 13335 # Cloudflare
+  #      - 136907 # Huawei Cloud
+  #      - 45102 # Alibaba Cloud
+  #  weight:
+  #    adjust: 10
 
   # ## System load based checks.
   # # If the system is under high load, add weight.
@@ -133,7 +133,7 @@ dnsbl: false
 ## Honeypot configuration
 honeypot:
   ## If not set, Anubis will assume you meant `true`.
-  enabled: true
+  enabled: false
   ## Currently the only supported implementation is the naive method.
   ## See https://anubis.techaro.lol/docs/admin/honeypot/overview#implementation-notes for more information
   implementation: naive
@@ -237,12 +237,12 @@ status_codes:
 # backends section of the docs for more information:
 #
 # https://anubis.techaro.lol/docs/admin/policies#storage-backends
-#store:
-#  backend: memory
-#  parameters: {}
 store:
-  backend: bbolt
-  parameters: { path: /var/lib/private/anubis/apache2/anubis.bdb }
+  backend: memory
+  parameters: {}
+#store:
+#  backend: bbolt
+#  parameters: { path: /var/lib/private/anubis/apache2/anubis.bdb }
 
 # The weight thresholds for when to trigger individual challenges. Any
 # CHALLENGE will take precedence over this.
