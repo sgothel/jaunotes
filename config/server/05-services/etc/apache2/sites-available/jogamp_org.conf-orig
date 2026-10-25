@@ -1,0 +1,99 @@
+#
+# Almost any Apache directive may go into a VirtualHost container.
+# The first VirtualHost section is used for requests without a known
+# server name.
+#
+<VirtualHost *:80>
+    ServerAdmin jausoft@jausoft.com
+    ServerName jogamp.org
+    ServerAlias *.jogamp.org
+    ServerPath /jogamp.org/
+    SuexecUserGroup webrunner webrunner
+    RewriteEngine On
+
+    ErrorLog ${APACHE_LOG_DIR}/jogamp.org-error.log
+    CustomLog ${APACHE_LOG_DIR}/jogamp.org-access.log combined_ext
+
+    DocumentRoot /srv/www/jogamp.org
+
+    # don't loose time with IP address lookups
+    HostnameLookups Off
+
+    # needed for named virtual hosts
+    UseCanonicalName Off
+
+    # configures the footer on server-generated documents
+    ServerSignature On
+
+    Include /etc/apache2/acme-and-redirect.conf
+
+    RedirectMatch 404 /\.git
+
+    ErrorDocument 500 "Server is currently being overrun by bots. Please try again later."
+
+    Include sites-available/bot-filter-rewrite.conf
+    RewriteRule . - [F,L]
+
+    # anubis
+    #RewriteCond %{SERVER_NAME} =jausoft.com
+    #RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+    RewriteCond %{HTTP_HOST} ^www\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^scm\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/cgit/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^joal\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/joal/www/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^jogl\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/jogl/www/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^jocl\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/jocl/www/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^demos\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/jogl-demos/www/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^bugzilla\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/bugzilla/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^chuck\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/chuck/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^(.*)\.jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/%1/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^jogamp\.org$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^www\.jogamp\.com$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^(.*)\.jogamp\.com$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/%1/$1 [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^jogamp\.com$ [NC]
+    RewriteRule ^/(.*)$ https://jogamp.org/$1 [R=301,L,NE]
+</VirtualHost>
+
+#
+# Directives to allow use of AWStats as a CGI
+#
+#Alias /awstatsclasses "/usr/local/awstats/wwwroot/classes/"
+#Alias /awstatscss "/usr/local/awstats/wwwroot/css/"
+#Alias /awstatsicons "/usr/local/awstats/wwwroot/icon/"
+#ScriptAlias /awstats/ "/usr/local/awstats/wwwroot/cgi-bin/"
+
+#
+# This is to permit URL access to scripts/files in AWStats directory.
+#
+<Directory "/usr/local/awstats/wwwroot">
+    Options None
+    AllowOverride None
+    #Order allow,deny
+    #Allow from all
+    Require all granted
+</Directory>
+

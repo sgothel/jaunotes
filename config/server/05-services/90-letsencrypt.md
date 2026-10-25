@@ -32,7 +32,7 @@ mail.jogamp.org = /srv/www/jogamp.org
 www.jogamp.org = /srv/www/jogamp.org
 ```
 ### Renewal Hooks
-Install `apache`, `dovecot` and `sendmail` 
+Install 'haproxy`, `apache`, `dovecot` and `sendmail`
 restart scripts into
 `etc/letsencrypt/renewal-hooks/deploy/`.
 
@@ -51,6 +51,10 @@ Edit files to adopt new ssl cert
 Edit files to adopt new ssl cert
 - `/etc/dovecot/conf.d/10-ssl.conf`
 
+## HAProxy
+cd /etc/letsencrypt/live/jausoft.com
+ln -s ln -s privkey.pem fullchain.pem.key
+
 ## Apache
 Add file `/etc/apache2/acme-and-redirect.conf`.
 
@@ -62,7 +66,7 @@ Edit files to allow acme redirection for webroot authentification
 
 Edit files to adopt new ssl cert
 - `/etc/apache2/sites-available/jogamp_org-ssl.conf`
-  - Use ssl certs and keys 
+  - Use ssl certs and keys
     - `SSLCertificateFile /etc/letsencrypt/live/jogamp.org/fullchain.pem`
     - `SSLCertificateKeyFile /etc/letsencrypt/live/jogamp.org/privkey.pem`
 

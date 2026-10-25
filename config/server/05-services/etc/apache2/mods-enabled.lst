@@ -33,6 +33,7 @@ proxy_ftp.load
 proxy_http.load
 proxy.load
 proxy_scgi.load
+remoteip.load
 reqtimeout.conf
 reqtimeout.load
 rewrite.load

@@ -8,16 +8,33 @@ Notes and summary about DoS Mitigation using
 - [iptables](https://www.netfilter.org/projects/iptables/index.html) and [nftables](https://www.netfilter.org/projects/nftables/index.html)
   - Initial syn-flood and DoS mitigation when it happens
   - Logging events to file for optional pre-emptive fail2ban mitigation
+- [HAProxy](https://www.haproxy.org/)
+  - High-Performance load-balancer incl. SSL handling
+  - Diverting traffic to either Anubis or Apache2 directly
+- [Anubis](https://anubis.techaro.lol/)
+  - Proof of work for web-client browser to distinguish between humans and bad-bots
+  - Adds further bad-bot detection analysis including GeoIP and honeypots
+- [Apache2](https://httpd.apache.org/)
+  - Well, the webserver w/ `suexex` and all the high-level features
+
+Optionally, `fail2ban` can be employed
 - [fail2ban](https://github.com/fail2ban/fail2ban)
   - Filtering log files and conditionally adding/removing `nftables` blocking rules
   - Temporarily preemptive blocking after the event
   - Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
   - Using certain default jails
-- [anubis](https://anubis.techaro.lol/)
-  - Proof of work for web-client browser to distinguish between humans and bad-bots
-  - Adds further bad-bot detection analysis including GeoIP and honeypots
 
 Also see [Server Connection Limitation and Timeouts](../doc/server-limits_timeouts.md).
+
+General flow:
+```mermaid
+    World        -> Kernel
+    Kernel       -> HAProxy :80 :443
+    HAProxy :80  -> redir   :443
+                 -> Apache2 :3000
+    HAProxy :443 -> Anubis
+    Anubis       -> Apache2 :3001
+```
 
 ## Linux Kernel
 Used [sysctl configuration](../05-services/etc/sysctl.d/01-jau_defaults.conf)
@@ -63,18 +80,42 @@ Some references
 - [Understanding iptable’s hashlimit module (Poorly Documented)](https://poorlydocumented.com/2017/08/understanding-iptables-hashlimit-module/)
 - [Preventing SYN Flood Attacks on Your Linux Server (Ivan Salloum)](https://ivansalloum.com/preventing-syn-flood-attacks-on-your-linux-server/)
 
-## Fail2Ban
+## HAProxy
 
-[fail2ban](https://github.com/fail2ban/fail2ban)
-- Filtering log files and conditionally adding/removing `nftables` blocking rules
-- Temporarily preemptive blocking after the event
-- Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
-- Using certain default jails
+We use [HAProxy](https://www.haproxy.org/) as the load-balancer.
 
-Our [jail setup](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
-- Blocking whole port range, always
-- Default jails sshd, apache-\*, sendmail-\*, dovecot, sieve
-- Our custom jail dos-syn and modded `apache-badbots`
+### HAProxy Configuration
+Our [setup](../05-services/etc/haproxy/).
+
+```
+# Install
+curl https://haproxy.debian.net/haproxy-archive-keyring.gpg --create-dirs --output /etc/apt/keyrings/haproxy-archive-keyring.gpg
+echo deb "[signed-by=/etc/apt/keyrings/haproxy-archive-keyring.gpg]" https://haproxy.debian.net trixie-backports-3.4 main > /etc/apt/sources.list.d/haproxy.list
+apt update
+apt dist-upgrade
+apt install haproxy=3.4.\*
+
+# Configure
+usermod -a -G anubis haproxy
+systemctl stop haproxy
+
+# make the letsencrypt private-key available
+cd /etc/letsencrypt/live/jogamp.org
+ln -s privkey.pem fullchain.pem.key
+
+cat << EOF > /etc/letsencrypt/renewal-hooks/deploy/haproxy
+#!/bin/sh -eu
+# vim: ai ts=4 sts=4 et sw=4
+
+/usr/bin/systemctl reload haproxy
+EOF
+chmod ugo+x /etc/letsencrypt/renewal-hooks/deploy/haproxy
+
+# Setup the actual site-config
+cd /etc/haproxy
+vi conf.d/http-jogamp.cfg
+systemctl restart haproxy
+```
 
 ## Anubis
 [anubis](https://anubis.techaro.lol/)
@@ -89,18 +130,17 @@ server from responding, causing lengthily waiting times and hence power consumpt
 The author already noted once, that the AI bots can solve the challenge
 as there are many tools available already. We will see.
 
-### Configuration
-Our [apache2 setup](../02-firewall/etc/anubis/)
-almost uses the default settings.
+### Anubis Configuration
+Our [setup](../05-services/etc/anubis/).
 
 ```
-# install
+# Install
 apt install ./anubis_1.28.2_amd64.deb
 
 # Configure
 
 # add user and group anubis
-useradd anubis
+useradd anubis -s /usr/sbin/nologin
 chown -R anubis:anubis /etc/anubis
 
 # Add User=anubis and Group=anubis to [service]
@@ -126,7 +166,50 @@ systemctl daemon-reload
 systemctl enable --now anubis@apache2.service
 systemctl status anubis@apache2
 curl http://localhost:9090/metrics
+```
 
+## Apache2
+### Apache2 Configuration
+
+```
+cd /etc/apache2
+a2enmod remoteip
+# Add port 3001
+vi ports.conf
+# silence :80 :443
+# ssl is handled via `haproxy`
+# receive original :80  content at :3000
+# receive original :443 content at :3001 (but plain w/o ssl)
+vi 001-my-site.conf
+systemctl restart apache2
+```
+
+## Fail2Ban
+
+Optional, as it may consume too much resources
+- userspace cpu
+- kernel `nftables`
+
+[fail2ban](https://github.com/fail2ban/fail2ban)
+- Filtering log files and conditionally adding/removing `nftables` blocking rules
+- Temporarily preemptive blocking after the event
+- Reads our iptables syn-flood and DoS detection and creates blocks (dos-syn jail)
+- Using certain default jails
+
+Our [jail setup](../02-firewall/etc/fail2ban/jail.d/jau-01.conf)
+- Blocking whole port range, always
+- Default jails sshd, apache-\*, sendmail-\*, dovecot, sieve
+- Our custom jail dos-syn and modded `apache-badbots`
+
+## BadBots
+It came to our attention that all of the above wasn't enought.
+
+Additionally we need to filter out bad bot requests,
+identified by http header as well as known IP addresses.
+
+### Via `User-Agent` and `Sec-CH-UA`
+
+```
 cd /etc/apache2
 a2enmod remoteip
 # Add port 3001
@@ -390,7 +473,6 @@ mods-enabled/http2.conf
  H2Push          off
 
 sites-enabled/001-jausoft_com-ssl.conf
- <VirtualHost *:443>
  Protocols h2 http/1.1
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
