@@ -49,6 +49,14 @@ bots:
   # Allow common "keeping the internet working" routes (well-known, favicon, robots.txt)
   - import: /usr/share/doc/anubis/data/common/keep-internet-working.yaml
 
+  - name: pass-ok1
+    path_regex: ^/(cgit-css|favicon|images|icons)/.*$
+    action: ALLOW
+
+  - name: pass-ok2
+    path_regex: ^/.*\.css$
+    action: ALLOW
+
   # # Punish any bot with "bot" in the user-agent string
   # # This is known to have a high false-positive rate, use at your own risk
   # - name: generic-bot-catchall
@@ -99,6 +107,20 @@ bots:
   #   expression: load_15m <= 4.0 # make sure to end the load comparison in a .0
   #   weight:
   #     adjust: -10
+
+  - name: cgit-query
+    #path_regex: ^/cgit/.*$
+    expression:
+      all:
+        - 'path.startsWith("/cgit/")'
+        - size(query) > 0
+    action: CHALLENGE
+    challenge:
+      difficulty: 4
+      algorithm: fast
+    #action: WEIGH
+    #weight:
+    #  adjust: 10
 
   # Generic catchall rule
   - name: generic-browser
@@ -295,7 +317,7 @@ thresholds:
     challenge:
       # https://anubis.techaro.lol/docs/admin/configuration/challenges/proof-of-work
       algorithm: fast
-      difficulty: 5
+      difficulty: 4
   # For clients that are browser like and have gained many points from custom rules
   - name: extreme-suspicion
     expression: weight >= 30
@@ -303,4 +325,4 @@ thresholds:
     challenge:
       # https://anubis.techaro.lol/docs/admin/configuration/challenges/proof-of-work
       algorithm: fast
-      difficulty: 7
+      difficulty: 6
