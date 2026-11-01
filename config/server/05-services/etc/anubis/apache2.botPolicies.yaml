@@ -114,13 +114,13 @@ bots:
       all:
         - 'path.startsWith("/cgit/")'
         - size(query) > 0
-    action: CHALLENGE
-    challenge:
-      difficulty: 4
-      algorithm: fast
-    #action: WEIGH
-    #weight:
-    #  adjust: 10
+    #action: CHALLENGE
+    #challenge:
+    #  difficulty: 4
+    #  algorithm: fast
+    action: WEIGH
+    weight:
+      adjust: 10
 
   # Generic catchall rule
   - name: generic-browser
