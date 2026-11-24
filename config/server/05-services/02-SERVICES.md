@@ -536,12 +536,16 @@ apt install libgdbm-dev libgdbm6
     - or squash your local changes
   - git fetch --all
 
-  - Upgrade to 1.46.2
+  - Upgrade to 1.46.3
     ```
     git fetch --all
-    git branch REL1_46_2 1.46.2
-    git checkout REL1_46_2
+    git checkout -b REL1_46_3 1.46.3
     git submodule update --recursive
+
+    # additional packages might need to be installed
+    # verified by update below (includes database update)
+    cd maintenance
+    ./run.php update
     ```
 
 - chown -R webrunner:webrunner .
