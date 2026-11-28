@@ -12,6 +12,7 @@ This is a project agnostic version of my earlier [JogAmp Scripting Notes](https:
 
 ## Development
 - [C++ Support](dev/cpp/Cpp-Support.md)
+- [crosstools-ng](dev/crosstools-ng/README.md) for C++26 gcc-16 build
 
 ## Tools
 - [Python](tools/python.md)
